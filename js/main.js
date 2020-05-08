@@ -121,33 +121,6 @@ function init() {
 
 // ######################## Helper Functions ########################
 
-
-/*
-This function will add a simple cube to our scene. 
-*/
-function createMazeCubesOLD() {
-
-    // Make the shape of the cube that is UNITWIDTH wide/deep, and UNITHEIGHT tall
-    let cubeGeo = new THREE.BoxGeometry(UNITWIDTH, UNITHEIGHT, UNITWIDTH);
-    // Make the material of the cube and set it to blue
-    let cubeMat = new THREE.MeshPhongMaterial({
-      color: 0xFF0000,
-    });
-    
-    // Combine the geometry and material to make the cube
-    let cube = new THREE.Mesh(cubeGeo, cubeMat);
-  
-    // Add the cube to the scene
-    scene.add(cube);
-  
-    // Update the cube's position
-    cube.position.y = UNITHEIGHT / 2;
-    cube.position.x = 0;
-    cube.position.z = -100;
-    // rotate the cube by 30 degrees
-    cube.rotation.y = degreesToRadians(30);
-  }
-
   /*
     This function is a simple function that groups the 
     creation of our lights and adds them to the scene.
