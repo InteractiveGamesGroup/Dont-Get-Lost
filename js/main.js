@@ -42,17 +42,21 @@ let PLAYERSPEED = 800.0;
 
 let clock;
 
+// variables for gltf model
+let mixer;
+let soldier;
+
+
 // Get the pointer lock state
 getPointerLock();
 init();
 animate();
 
 
-
-
 // ######################## Initialisation function ########################
 
 function init() {
+
 
     /* We use these to keep track of the change in time (delta) it takes to render new frames. 
     We also use listenForPlayerMovement(), which gathers user input.
@@ -65,11 +69,12 @@ function init() {
     scene = new THREE.Scene();
 
     // Add some fog for effects
-    scene.fog = new THREE.FogExp2(0xcccccc, 0.0015);
+    //scene.fog = new THREE.FogExp2(0xcccccc, 0.0015);
 
     // Set render settings
     renderer = new THREE.WebGLRenderer();
-    renderer.setClearColor(scene.fog.color);
+    //renderer.setClearColor(scene.fog.color);
+    renderer.shadowMap.enabled = true;
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -79,9 +84,14 @@ function init() {
 
     // Set camera position and view details
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
-    camera.position.y = 20; // Height the camera will be looking from
+    camera.position.y = 30; // Height the camera will be looking from
     camera.position.x = 0;
-    camera.position.z = 0;
+    camera.position.z = 70; // just placing the camera behind the soldier for now.
+
+    // top view of maze
+    // camera.position.y = 250;
+    // const point = new THREE.Vector3(0,0,0);
+    // camera.lookAt(point);
 
     // Add the camera
     scene.add(camera);
@@ -90,6 +100,11 @@ function init() {
     controls = new THREE.PointerLockControls(camera);
     scene.add(controls.getObject());
 
+
+    // load model to the scene
+    loadPlayerModel();
+    
+
     // Add the walls(cubes) of the maze
     createMazeCubes();
     createGround();
@@ -97,6 +112,7 @@ function init() {
 
     // Add lights to the scene
     addLights();
+
 
     // Listen for if the window changes sizes and adjust
     window.addEventListener('resize', onWindowResize, false);
@@ -139,11 +155,13 @@ function createMazeCubesOLD() {
   function addLights() {
     let lightOne = new THREE.DirectionalLight(0xffffff);
     lightOne.position.set(1, 1, 1);
+    lightOne.castShadow = true;
     scene.add(lightOne);
   
     // Add a second light with half the intensity
     let lightTwo = new THREE.DirectionalLight(0xffffff, .5);
     lightTwo.position.set(1, -1, -1);
+    lightTwo.castShadow = true;
     scene.add(lightTwo);
   }
 
@@ -168,13 +186,23 @@ function createMazeCubesOLD() {
     like moving around the maze.
    */
 function animate() {
+
     render();
     // Keep updating the renderer
     requestAnimationFrame(animate);
     // Get the change in time between frames
     var delta = clock.getDelta();
+
+    // enable animation of the player
+    if (mixer) {
+      mixer.update(delta);
+    }
+
     animatePlayer(delta);
+
 }
+
+
 function render() {
     renderer.render(scene, camera);
 }
@@ -273,6 +301,7 @@ function degreesToRadians(degrees) {
       ground.position.set(0, 1, 0);
       // Rotate the place to ground level
       ground.rotation.x = degreesToRadians(90);
+      ground.receiveShadow = true;
       scene.add(ground);
   }
 
@@ -424,12 +453,14 @@ function animatePlayer(delta) {
   
     if (moveForward) {
       playerVelocity.z -= PLAYERSPEED * delta;
+      //soldier.translateZ -= PLAYERSPEED * delta;
     } 
     if (moveBackward) {
       playerVelocity.z += PLAYERSPEED * delta;
     } 
     if (moveLeft) {
       playerVelocity.x -= PLAYERSPEED * delta;
+      //soldier.translateX -= PLAYERSPEED * delta;
     } 
     if (moveRight) {
       playerVelocity.x += PLAYERSPEED * delta;
@@ -443,4 +474,60 @@ function animatePlayer(delta) {
     controls.getObject().translateZ(playerVelocity.z * delta);
   }
 
+
+  //The GLTF file itself (passed into the function as the variable gltf) has two parts to it, 
+  //the scene inside the file (gltf.scene), and the animations (gltf.animations). 
+
+  function loadPlayerModel() {
+
+    var loader = new THREE.GLTFLoader();
+
+    loader.load(
+      'resources/Soldier.glb',
+
+      function(gltf) {
+      
+        soldier = gltf.scene;
+        soldier.scale.set( 15, 15, 5 );			   
+        soldier.position.x = 0;				    
+        soldier.position.y = 1;				    
+        soldier.position.z = 0;
+
+        // soldier = gltf.scene.getObjectByName("Scene");
+        // console.log(soldier);
+        
+        mixer = new THREE.AnimationMixer(soldier);
+
+        // maximum of four animation clips with indices 0,1,2,3
+
+        // ("Idle" animation) soldier is just idle.
+        //let idleAction = mixer.clipAction(gltf.animations[0]);
+        //idleAction.play()
+
+        // ("Run" animation) soldeir runs but does not change position
+        //let runAction = mixer.clipAction(gltf.animations[1]);
+        //runAction.play()
+
+        // ("TPose" animation) this is the default animation when no animations are enabled.
+        //let TposeAction = mixer.clipAction(gltf.animations[2]);
+        //TposeAction.play()
+
+        // ("Walk" animation) soldier walks but does not change position
+        let walkAction = mixer.clipAction(gltf.animations[3]);
+        walkAction.play()
+    
+        scene.add(soldier);
+        
+      },
+
+      undefined,
+
+      function(error) {
+        console.error(error);
+      }
+
+    );
+
+
+  }
 
