@@ -17,8 +17,8 @@ let mapSize;    // The width/depth of the maze
     The controls is used to store our controller and 
     is used controlsEnabled to keep track of the controller state.
 */
-let controls;
-let controlsEnabled = false;
+let pointerControls;
+let pointerControlsEnabled = false;
 
 // HTML elements to be changed
 let blocker = document.getElementById('blocker');
@@ -38,7 +38,11 @@ let moveRight = false;
 let playerVelocity = new THREE.Vector3();
 
 // How fast the player will move
-let PLAYERSPEED = 800.0;
+let PLAYERSPEED = 300.0;
+
+let playerWalk;
+let playerIdle;
+
 
 let clock;
 
@@ -69,11 +73,11 @@ function init() {
     scene = new THREE.Scene();
 
     // Add some fog for effects
-    //scene.fog = new THREE.FogExp2(0xcccccc, 0.0015);
+    scene.fog = new THREE.FogExp2(0xcccccc, 0.0030);
 
     // Set render settings
     renderer = new THREE.WebGLRenderer();
-    //renderer.setClearColor(scene.fog.color);
+    renderer.setClearColor(scene.fog.color);
     renderer.shadowMap.enabled = true;
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -84,9 +88,9 @@ function init() {
 
     // Set camera position and view details
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
-    camera.position.y = 30; // Height the camera will be looking from
+    camera.position.y = 15; // Height the camera will be looking from
     camera.position.x = 0;
-    camera.position.z = 70; // just placing the camera behind the soldier for now.
+    camera.position.z = 0; 
 
     // top view of maze
     // camera.position.y = 250;
@@ -97,8 +101,9 @@ function init() {
     scene.add(camera);
 
     // Connect camera with the pointerlockcontrolls
-    controls = new THREE.PointerLockControls(camera);
-    scene.add(controls.getObject());
+    pointerControls = new THREE.PointerLockControls(camera);
+    scene.add(pointerControls.getObject());
+
 
 
     // load model to the scene
@@ -337,12 +342,12 @@ function getPointerLock() {
     if (document.pointerLockElement === container) {
         // Hide blocker and instructions
         blocker.style.display = "none";
-        controls.enabled = true;
+        pointerControls.enabled = true;
     // Turn off the controls
     } else {
       // Display the blocker and instruction
         blocker.style.display = "";
-        controls.enabled = false;
+        pointerControls.enabled = false;
     }
 }
 
@@ -426,25 +431,36 @@ function animatePlayer(delta) {
   
     if (moveForward) {
       playerVelocity.z -= PLAYERSPEED * delta;
+      playerIdle.stop();
+      playerWalk.play();
       //soldier.translateZ -= PLAYERSPEED * delta;
     } 
     if (moveBackward) {
       playerVelocity.z += PLAYERSPEED * delta;
+      playerIdle.stop();
+      playerWalk.play();
     } 
     if (moveLeft) {
       playerVelocity.x -= PLAYERSPEED * delta;
+      playerIdle.stop();
+      playerWalk.play();
       //soldier.translateX -= PLAYERSPEED * delta;
     } 
     if (moveRight) {
       playerVelocity.x += PLAYERSPEED * delta;
+      playerIdle.stop();
+      playerWalk.play();
     }
     if( !( moveForward || moveBackward || moveLeft ||moveRight)) {
       // No movement key being pressed. Stop movememnt
       playerVelocity.x = 0;
       playerVelocity.z = 0;
+      // Stop player from walking
+      playerWalk.stop();
+      playerIdle.play();
     }
-    controls.getObject().translateX(playerVelocity.x * delta);
-    controls.getObject().translateZ(playerVelocity.z * delta);
+    pointerControls.getObject().translateX(playerVelocity.x * delta);
+    pointerControls.getObject().translateZ(playerVelocity.z * delta);
   }
 
 
@@ -453,18 +469,23 @@ function animatePlayer(delta) {
 
   function loadPlayerModel() {
 
-    var loader = new THREE.GLTFLoader();
+    let loader = new THREE.GLTFLoader();
 
+    // for(const model of Object.values(models)){
+    //   loader.load(model.url,(gltf)=>{
+        
+    //   });
+    // }
     loader.load(
       'resources/Soldier.glb',
 
       function(gltf) {
       
         soldier = gltf.scene;
-        soldier.scale.set( 15, 15, 5 );			   
+        soldier.scale.set( 15, 15, 15 );			   
         soldier.position.x = 0;				    
-        soldier.position.y = 1;				    
-        soldier.position.z = 0;
+        soldier.position.y = -25;				    
+        soldier.position.z = -20;
 
         // soldier = gltf.scene.getObjectByName("Scene");
         // console.log(soldier);
@@ -474,8 +495,11 @@ function animatePlayer(delta) {
         // maximum of four animation clips with indices 0,1,2,3
 
         // ("Idle" animation) soldier is just idle.
-        //let idleAction = mixer.clipAction(gltf.animations[0]);
-        //idleAction.play()
+        // let idleAction = mixer.clipAction(gltf.animations[0]);
+        // idleAction.play();
+        playerIdle = mixer.clipAction(gltf.animations[0]);
+        playerIdle.play();
+        
 
         // ("Run" animation) soldeir runs but does not change position
         //let runAction = mixer.clipAction(gltf.animations[1]);
@@ -486,10 +510,15 @@ function animatePlayer(delta) {
         //TposeAction.play()
 
         // ("Walk" animation) soldier walks but does not change position
-        let walkAction = mixer.clipAction(gltf.animations[3]);
-        walkAction.play()
+        // let walkAction = mixer.clipAction(gltf.animations[3]);
+        // walkAction.play();
+        playerWalk = mixer.clipAction(gltf.animations[3]);
     
-        scene.add(soldier);
+        // Add soldier to scene
+        // scene.add(soldier);
+
+        // Add soldier to the camera
+        camera.add(soldier);
         
       },
 
