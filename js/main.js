@@ -1,10 +1,13 @@
+"use strict";
 
 // ######################## Global variables ########################
 
-let UNITWIDTH = 90; // Width of a cubes in the maze
-let UNITHEIGHT = 45; // Height of the cubes in the maze
+// Standard three.js requirements.
+let canvas,camera, scene, renderer;
 
-let camera, scene, renderer;
+// Used to create the Maze
+const UNITWIDTH = 90; // Width of a cubes in the maze
+const UNITHEIGHT = 45; // Height of the cubes in the maze
 
 // Create cubes variables
 let totalCubesWide = 0; // How many cubes wide the maze will be
@@ -14,60 +17,181 @@ let collidableObjects = []; // An array of collidable objects used later
 let mapSize;    // The width/depth of the maze
 
 /* 
-    The controls is used to store our controller and 
-    is used controlsEnabled to keep track of the controller state.
+    These variables are used to store our controller and 
+    controlsEnabled is used to keep track of the controller state.
 */
 let pointerControls;
 let pointerControlsEnabled = false;
 
 // HTML elements to be changed
-let blocker = document.getElementById('blocker');
+let blocker
+
 
 /* 
-    These variables are used for the player movement
+    Player variables.
 */
-
-
+let player;
+let playerHead;
+let root ; // player model 
+let mixer; // Used for animation
+let playerWalk;
+let playerIdle;
 // Flags to determine which direction the player is moving
 let moveForward = false;
 let moveBackward = false;
 let moveLeft = false;
 let moveRight = false;
-
+let preventTPose = true;
 // Velocity vector for the player
 let playerVelocity = new THREE.Vector3();
-
+let playerRotation = 0;
 // How fast the player will move
-let PLAYERSPEED = 300.0;
+let PLAYERSPEED = 400.0;
 
-let playerWalk;
-let playerIdle;
-
-
+// Used for keeping track of animation
 let clock;
 
-// variables for gltf model
-let mixer;
-let soldier;
+// Loading manager
+const manager = new THREE.LoadingManager();
+manager.onLoad = init;
+// Progress Bar
+let progressbarElem ;
+manager.onProgress = (url, itemsLoaded, itemsTotal) => {
+  progressbarElem.style.width = `${itemsLoaded / itemsTotal * 100 | 0}%`;
+};
+
+/**
+ *  The render function draws the scene.
+ */
+function render() {
+    renderer.render(scene, camera);
+}
+
+/*
+  This function is used to setup the game.
+  i.e load up neccessary models,and variables;
+*/
+function setupGame(){
+  // HTML Element that contains the progress bar
+  progressbarElem = document.querySelector('#progressbar');
+
+  // HTML Element that contains the blocker(instructions)
+  blocker = document.getElementById('blocker');
+
+  // Load the player model
+  loadPlayerModel();
+}
+
+/*
+  The GLTF file itself (passed into the function as the variable gltf) has two parts to it, 
+  the scene inside the file (gltf.scene), and the animations (gltf.animations). 
+*/
+function loadPlayerModel() {
+  
+
+  const modelUrl = 'resources/SoldierModel.gltf'
+  function callback(gltf){
+
+    root = gltf.scene;
+    root.scale.set( 15, 15, 15 );			   
+    root.position.x = 0;				    
+    root.position.y = -25;				    
+    root.position.z = -20;
+    // Add soldier root to scene
+    // scene.add(root);
+    // camera.add(root);
+    
+    player = root.getObjectByName("Character");
+    playerHead = root.getObjectByName("mixamorigHeadTop_End");
+     
+
+    // Animation
+    mixer = new THREE.AnimationMixer(root);
+
+    //("Idle" animation) soldier is just idle.
+    playerIdle = mixer.clipAction(gltf.animations[0]);
+    playerIdle.play();
+
+    // ("Walk" animation) soldier walks but does not change position
+    playerWalk = mixer.clipAction(gltf.animations[3]);
+      
+      
+    // Dump soldier model scenegraph
+    // console.log(dumpObject(root).join('\n'));
+  }
 
 
-// Get the pointer lock state
-getPointerLock();
-init();
-animate();
+  let loader = new THREE.GLTFLoader(manager);
+  try{
+      loader.load(modelUrl,callback);
+  }catch(e){
+      connsole.log(e);
+      console.log("Error loading model from " + modelURL);
+  }
 
 
-// ######################## Initialisation function ########################
+  // loader.load(
+  //   'resources/Soldier.glb',
 
-function init() {
+  //   function(gltf) {
+    
+  //     soldier = gltf.scene;
+  //     soldier.scale.set( 15, 15, 15 );			   
+  //     soldier.position.x = 0;				    
+  //     soldier.position.y = -25;				    
+  //     soldier.position.z = -20;
 
+  //     // soldier = gltf.scene.getObjectByName("Scene");
+  //     // console.log(soldier);
+      
+  //     mixer = new THREE.AnimationMixer(soldier);
 
-    /* We use these to keep track of the change in time (delta) it takes to render new frames. 
-    We also use listenForPlayerMovement(), which gathers user input.
-    */
-    clock = new THREE.Clock();
-    listenForPlayerMovement();
+  //     // maximum of four animation clips with indices 0,1,2,3
 
+  //     // ("Idle" animation) soldier is just idle.
+  //     // let idleAction = mixer.clipAction(gltf.animations[0]);
+  //     // idleAction.play();
+  //     playerIdle = mixer.clipAction(gltf.animations[0]);
+  //     playerIdle.play();
+      
+
+  //     // ("Run" animation) soldeir runs but does not change position
+  //     //let runAction = mixer.clipAction(gltf.animations[1]);
+  //     //runAction.play()
+
+  //     // ("TPose" animation) this is the default animation when no animations are enabled.
+  //     //let TposeAction = mixer.clipAction(gltf.animations[2]);
+  //     //TposeAction.play()
+
+  //     // ("Walk" animation) soldier walks but does not change position
+  //     // let walkAction = mixer.clipAction(gltf.animations[3]);
+  //     // walkAction.play();
+  //     playerWalk = mixer.clipAction(gltf.animations[3]);
+  
+  //     // Add soldier to scene
+  //     // scene.add(soldier);
+
+  //     // Add soldier to the camera
+  //     camera.add(soldier);
+      
+  //   },
+
+  //   undefined,
+
+  //   function(error) {
+  //     console.error(error);
+  //   }
+
+  // );
+}
+
+/* ---------------------------- CREATE THE WORLD ------------------
+
+/**
+ * This function is called by the init() method to create the world. 
+ */
+
+function createWorld(){
 
     // Create the scene where everything will go
     scene = new THREE.Scene();
@@ -75,136 +199,90 @@ function init() {
     // Add some fog for effects
     scene.fog = new THREE.FogExp2(0xcccccc, 0.0030);
 
-    // Set render settings
-    renderer = new THREE.WebGLRenderer();
+    // ------------------- Set renderer settings ----------------------
     renderer.setClearColor(scene.fog.color);
     renderer.shadowMap.enabled = true;
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // Get the HTML container and connect renderer to it
-    let container = document.getElementById('container');
-    container.appendChild(renderer.domElement);
-
-    // Set camera position and view details
+    // ------------------- Set Camera settings ----------------------
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
-    camera.position.y = 15; // Height the camera will be looking from
     camera.position.x = 0;
+    camera.position.y = 15; // Height the camera will be looking from
     camera.position.z = 0; 
 
-    // top view of maze
-    // camera.position.y = 250;
-    // const point = new THREE.Vector3(0,0,0);
-    // camera.lookAt(point);
+    // ------------------- Set Global scene Light settings ----------------------
+    addLights();
 
-    // Add the camera
-    scene.add(camera);
-
-    // Connect camera with the pointerlockcontrolls
-    pointerControls = new THREE.PointerLockControls(camera);
-    scene.add(pointerControls.getObject());
-
-
-
-    // load model to the scene
-    loadPlayerModel();
-    
+    //------------------- Create the scene's visible objects ----------------------
 
     // Add the walls(cubes) of the maze
     createMazeCubes();
     createGround();
     createPerimWalls();
 
-    // Add lights to the scene
-    addLights();
 
+    // add player to the world
+    // scene.add(root);
+    camera.add(root);
+    
+
+    
+
+    
+    //------------------- Extra functionalities ----------------------
 
     // Listen for if the window changes sizes and adjust
     window.addEventListener('resize', onWindowResize, false);
 
 }
 
-// ######################## Helper Functions ########################
-
-  /*
-    This function is a simple function that groups the 
-    creation of our lights and adds them to the scene.
-   */
-  function addLights() {
-    let lightOne = new THREE.DirectionalLight(0xffffff);
-    lightOne.position.set(1, 1, 1);
-    lightOne.castShadow = true;
-    scene.add(lightOne);
-  
-    // Add a second light with half the intensity
-    let lightTwo = new THREE.DirectionalLight(0xffffff, .5);
-    lightTwo.position.set(1, -1, -1);
-    lightTwo.castShadow = true;
-    scene.add(lightTwo);
-  }
-
-  /*
-    This function is called whenever our event listener hears that a resize event was fired. 
-    This happens whenever the user adjusts the size of the window. 
-    If this happens, we want to make sure that the image stays proportional 
-    and can be seen in the entire window.
-   */
-  function onWindowResize() {
-
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-  
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  }
-
-  /*
-    This function will also call the render() function. 
-    The requestAnimationFrame() function is used to constantly update our renderer. 
-    Later on, we'll use these functions to update our renderer with cool animations 
-    like moving around the maze.
-   */
-function animate() {
-
-    render();
-    // Keep updating the renderer
-    requestAnimationFrame(animate);
-    // Get the change in time between frames
-    var delta = clock.getDelta();
-
-    // enable animation of the player
-    if (mixer) {
-      mixer.update(delta);
-    }
-
-    animatePlayer(delta);
-
-}
-
-
-function render() {
-    renderer.render(scene, camera);
-}
-
+/* ---------------------------- CREATEWORLD() HELPER FUNCTIONS ------------------
 
 /*
     These functions allow us to easily convert between degrees and radians.
 */
 function degreesToRadians(degrees) {
     return degrees * Math.PI / 180;
-  }
-  
-  function radiansToDegrees(radians) {
+}
+function radiansToDegrees(radians) {
     return radians * 180 / Math.PI;
-  }
+}
+/*
+    This function is called whenever our event listener hears that a resize event was fired. 
+    This happens whenever the user adjusts the size of the window. 
+    If this happens, we want to make sure that the image stays proportional 
+    and can be seen in the entire window.
+*/
+function onWindowResize() {
+
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+  
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
 
 /*
-    This is an updated version of createMazeCubes above.
-    It allows us to place 1’s where cubes are and 0’s where empty space is.
+This function is a simple function that groups the 
+creation of our lights and adds them to the scene.
 */
+function addLights() {
+    let lightOne = new THREE.DirectionalLight(0xffffff);
+    lightOne.position.set(1, 1, 1);
+    lightOne.castShadow = true;
+    scene.add(lightOne);
 
-  
-  
-  function createMazeCubes() {
+    // Add a second light with half the intensity
+    let lightTwo = new THREE.DirectionalLight(0xffffff, .5);
+    lightTwo.position.set(1, -1, -1);
+    lightTwo.castShadow = true;
+    scene.add(lightTwo);
+}
+
+/*
+    This function allows us to place 1’s where cubes are and 0’s where empty space is.
+*/
+function createMazeCubes() {
     // Maze wall mapping, assuming even square
     // 1's are cubes, 0's are empty space
     let map = [
@@ -266,30 +344,29 @@ function degreesToRadians(degrees) {
       mapSize = totalCubesWide * UNITWIDTH;
   }
 
-  /*
+/*
     This function allows us to use the calculated mapSize variable 
     to set the dimensions of the ground plane.
 */
-  function createGround() {
-      // Create ground geometry and material
-      let groundGeo = new THREE.PlaneGeometry(mapSize, mapSize);
-      let groundMat = new THREE.MeshPhongMaterial({ color: 0xA0522D, side: THREE.DoubleSide});
-  
-      let ground = new THREE.Mesh(groundGeo, groundMat);
-      ground.position.set(0, 1, 0);
-      // Rotate the place to ground level
-      ground.rotation.x = degreesToRadians(90);
-      ground.receiveShadow = true;
-      scene.add(ground);
-  }
+function createGround() {
+    // Create ground geometry and material
+    let groundGeo = new THREE.PlaneGeometry(mapSize, mapSize);
+    let groundMat = new THREE.MeshPhongMaterial({ color: 0xA0522D, side: THREE.DoubleSide});
 
-    /*
+    let ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.position.set(0, 1, 0);
+    // Rotate the place to ground level
+    ground.rotation.x = degreesToRadians(90);
+    ground.receiveShadow = true;
+    scene.add(ground);
+}
+
+/*
     This function allows us to add perimeter walls to box everything in.
     It uses a loop to make two planes (our walls) at a time, 
     using the mapSize variable we calculated in createGround() to determine how wide they should be.
 */
-
-  function createPerimWalls() {
+function createPerimWalls() {
     let halfMap = mapSize / 2;  // Half the size of the map
     let sign = 1;               // Used to make an amount positive or negative
 
@@ -319,33 +396,119 @@ function degreesToRadians(degrees) {
     }
 }
 
+/* ---------------------------- MOUSE(CONTROLL) AND ANIMATION SUPPORT ------------------
+
+/*
+    This function will also call the render() function. 
+    The requestAnimationFrame() function is used to constantly update our renderer. 
+*/
+function animate() {
+
+    render();
+    // Keep updating the renderer
+    requestAnimationFrame(animate);
+    // // Get the change in time between frames
+    let delta = clock.getDelta();
+
+    // // Enable animation of the player
+    if (mixer) {
+      mixer.update(delta);
+    }
+
+    // Moves the player i.e the camera
+    movePlayer(delta);
+
+}
+/*
+
+*/
+function movePlayer(delta) {
+    // Gradual slowdown
+    playerVelocity.x -= playerVelocity.x * 10.0 * delta;
+    playerVelocity.z -= playerVelocity.z * 10.0 * delta;
+  
+    if (moveForward) {
+      playerVelocity.z -= PLAYERSPEED * delta;
+      // playerIdle.stop();
+      playerWalk.play();
+      //soldier.translateZ -= PLAYERSPEED * delta;
+    } 
+    if (moveBackward) {
+      playerVelocity.z += PLAYERSPEED * delta;
+      // playerIdle.stop();
+      playerWalk.play();
+    } 
+    if (moveLeft) {
+      playerVelocity.x -= PLAYERSPEED * delta;
+      // playerRotation += PLAYERSPEED/10 * delta;
+      // playerIdle.stop();
+      playerWalk.play();
+      //soldier.translateX -= PLAYERSPEED * delta;
+    } 
+    if (moveRight) {
+      playerVelocity.x += PLAYERSPEED * delta;
+      // playerIdle.stop();
+      playerWalk.play();
+    }
+    if( !( moveForward || moveBackward || moveLeft || moveRight)) {
+      // No movement key being pressed. Stop movememnt
+      playerVelocity.x = 0;
+      playerVelocity.z = 0;
+      
+      // Stop player from walking
+      playerWalk.stop();
+      playerIdle.play();
+    }
+
+    // if(!(moveLeft || moveRight)){
+    //   // No left/right movement detected. Stop Movement.
+    //   playerRotation = 0;
+    // }
+    pointerControls.getObject().translateX(playerVelocity.x * delta);
+    pointerControls.getObject().translateZ(playerVelocity.z * delta);
+    // pointerControls.getObject().rotateY(playerRotation * delta);
+    // player.rotateZ(playerRotation * delta);
+
+    // player.translateX(playerVelocity.x * delta);
+    // player.translateZ(playerVelocity.z * delta);
+  }
+
+/*
+    The game uses THREE.PointerLockControls to let the user freely 
+    move around the scene generated in the game.
+*/
+
+function installPointerLockControls(){
+    
+    pointerControls = new THREE.PointerLockControls(camera);
+    scene.add(pointerControls.getObject());
+    // player.add(pointerControls.getObject());
+    
+}
+
 /*
     This function listens for when a mouse click happens. 
     After the click, our rendered game (in the container element) tries to get control of the mouse.
-
 */
-
 function getPointerLock() {
     document.onclick = function () {
-      container.requestPointerLock();
+      canvas.requestPointerLock();
     }
     document.addEventListener('pointerlockchange', lockChange, false); 
-  }
+}
 
-  /*
+/*
     This function needs to either disable or enable the controls and blocker element. 
-
 */
-
-  function lockChange() {
+function lockChange() {
     // Turn on controls
-    if (document.pointerLockElement === container) {
+    if (document.pointerLockElement === canvas) {
         // Hide blocker and instructions
         blocker.style.display = "none";
         pointerControls.enabled = true;
     // Turn off the controls
     } else {
-      // Display the blocker and instruction
+        // Display the blocker and instruction
         blocker.style.display = "";
         pointerControls.enabled = false;
     }
@@ -353,41 +516,38 @@ function getPointerLock() {
 
 /*
     This function is what will be flipping our direction states. 
-
 */
-
 function listenForPlayerMovement() {
     
     // A key has been pressed
-    var onKeyDown = function(event) {
+    let onKeyDown = function(event) {
+      switch (event.keyCode) {
 
-    switch (event.keyCode) {
+        case 38: // up
+        case 87: // w
+          moveForward = true;
+          break;
 
-      case 38: // up
-      case 87: // w
-        moveForward = true;
-        break;
+        case 37: // left
+        case 65: // a
+          moveLeft = true;
+          break;
 
-      case 37: // left
-      case 65: // a
-        moveLeft = true;
-        break;
+        case 40: // down
+        case 83: // s
+          moveBackward = true;
+          break;
 
-      case 40: // down
-      case 83: // s
-        moveBackward = true;
-        break;
-
-      case 39: // right
-      case 68: // d
-        moveRight = true;
-        break;
-    }
+        case 39: // right
+        case 68: // d
+          moveRight = true;
+          break;
+      }
   };
+  
 
   // A key has been released
-    var onKeyUp = function(event) {
-
+  let onKeyUp = function(event) {
     switch (event.keyCode) {
 
       case 38: // up
@@ -409,6 +569,8 @@ function listenForPlayerMovement() {
       case 68: // d
         moveRight = false;
         break;
+      default:
+        prevent = false;
     }
   };
 
@@ -417,119 +579,58 @@ function listenForPlayerMovement() {
   document.addEventListener('keyup', onKeyUp, false);
 }
 
+/*----------------------------- INITIALIZATION ----------------------------------------
+
+/**
+ *  This function is called by the loading manager so it will run after the
+ *  models have loaded.  It creates the renderer, canvas, and scene objects,
+ *  calls createWorld() to add objects to the scene, and renders the
+ *  initial view of the scene.  If an error occurs, it is reported.
+ */
+function init(){
+  // Hide the loading bar
+  const loadingElem = document.querySelector('#loading');
+  loadingElem.style.display = 'none';
+
+    try{
+        canvas = document.getElementById("glcanvas");
+        // Set render settings
+        renderer = new THREE.WebGLRenderer({
+            canvas: canvas,
+            antialias: true,
+            alpha:false
+        });
+        
+    }catch(e){
+        document.getElementById("message").innerHTML="<b>Sorry, an error occurred:<br>" +
+                e + "</b>";
+        return;
+    }
+
+    clock = new THREE.Clock();
+    listenForPlayerMovement();
+
+
+    getPointerLock();
+    createWorld();
+    installPointerLockControls();
+    animate();
+}
+
+
+/*----------------------------- SOME HELPER FUNCTIONS ----------------------------------------*/
 
 /*
-
-
-
+    This function helps to dump a scene graph of an object onto the console.
 */
-
-function animatePlayer(delta) {
-    // Gradual slowdown
-    playerVelocity.x -= playerVelocity.x * 10.0 * delta;
-    playerVelocity.z -= playerVelocity.z * 10.0 * delta;
-  
-    if (moveForward) {
-      playerVelocity.z -= PLAYERSPEED * delta;
-      playerIdle.stop();
-      playerWalk.play();
-      //soldier.translateZ -= PLAYERSPEED * delta;
-    } 
-    if (moveBackward) {
-      playerVelocity.z += PLAYERSPEED * delta;
-      playerIdle.stop();
-      playerWalk.play();
-    } 
-    if (moveLeft) {
-      playerVelocity.x -= PLAYERSPEED * delta;
-      playerIdle.stop();
-      playerWalk.play();
-      //soldier.translateX -= PLAYERSPEED * delta;
-    } 
-    if (moveRight) {
-      playerVelocity.x += PLAYERSPEED * delta;
-      playerIdle.stop();
-      playerWalk.play();
-    }
-    if( !( moveForward || moveBackward || moveLeft ||moveRight)) {
-      // No movement key being pressed. Stop movememnt
-      playerVelocity.x = 0;
-      playerVelocity.z = 0;
-      // Stop player from walking
-      playerWalk.stop();
-      playerIdle.play();
-    }
-    pointerControls.getObject().translateX(playerVelocity.x * delta);
-    pointerControls.getObject().translateZ(playerVelocity.z * delta);
-  }
-
-
-  //The GLTF file itself (passed into the function as the variable gltf) has two parts to it, 
-  //the scene inside the file (gltf.scene), and the animations (gltf.animations). 
-
-  function loadPlayerModel() {
-
-    let loader = new THREE.GLTFLoader();
-
-    // for(const model of Object.values(models)){
-    //   loader.load(model.url,(gltf)=>{
-        
-    //   });
-    // }
-    loader.load(
-      'resources/Soldier.glb',
-
-      function(gltf) {
-      
-        soldier = gltf.scene;
-        soldier.scale.set( 15, 15, 15 );			   
-        soldier.position.x = 0;				    
-        soldier.position.y = -25;				    
-        soldier.position.z = -20;
-
-        // soldier = gltf.scene.getObjectByName("Scene");
-        // console.log(soldier);
-        
-        mixer = new THREE.AnimationMixer(soldier);
-
-        // maximum of four animation clips with indices 0,1,2,3
-
-        // ("Idle" animation) soldier is just idle.
-        // let idleAction = mixer.clipAction(gltf.animations[0]);
-        // idleAction.play();
-        playerIdle = mixer.clipAction(gltf.animations[0]);
-        playerIdle.play();
-        
-
-        // ("Run" animation) soldeir runs but does not change position
-        //let runAction = mixer.clipAction(gltf.animations[1]);
-        //runAction.play()
-
-        // ("TPose" animation) this is the default animation when no animations are enabled.
-        //let TposeAction = mixer.clipAction(gltf.animations[2]);
-        //TposeAction.play()
-
-        // ("Walk" animation) soldier walks but does not change position
-        // let walkAction = mixer.clipAction(gltf.animations[3]);
-        // walkAction.play();
-        playerWalk = mixer.clipAction(gltf.animations[3]);
-    
-        // Add soldier to scene
-        // scene.add(soldier);
-
-        // Add soldier to the camera
-        camera.add(soldier);
-        
-      },
-
-      undefined,
-
-      function(error) {
-        console.error(error);
-      }
-
-    );
-
-
-  }
-
+function dumpObject(obj, lines = [], isLast = true, prefix = '') {
+    const localPrefix = isLast ? '└─' : '├─';
+    lines.push(`${prefix}${prefix ? localPrefix : ''}${obj.name || '*no-name*'} [${obj.type}]`);
+    const newPrefix = prefix + (isLast ? '  ' : '│ ');
+    const lastNdx = obj.children.length - 1;
+    obj.children.forEach((child, ndx) => {
+    const isLast = ndx === lastNdx;
+    dumpObject(child, lines, isLast, newPrefix);
+    });
+    return lines;
+}
