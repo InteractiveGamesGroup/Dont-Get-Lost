@@ -3,25 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maze Game</title>
-    <link rel="stylesheet" type="text/css" href="css/stylesheet.css">
-</head>
-<body>
+    <title>Dont Get Lost</title>
 
-    <div id='container'></div>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" type="text/css" href="css/stylesheet.css">
+
+    <!-- JS Scripts -->
     <script src='js/libs/three.js'></script>
     <script src="js/controls/PointerLockControls.js"></script>
     <script src='js/loaders/GLTFLoader.js'></script>
+    <script src="js/temp.js"></script>
 
+</head>
+<body onload="setupGame()" >
+    
+    <canvas id="glcanvas"></canvas>
     <div id="blocker">
         <div id="instructions">
         <strong>Click to play!</strong>
         </div>
+    </div> 
+    
+    <div id="loading">
+        <div>
+        <div>...loading...</div>
+        <div class="progress"><div id="progressbar"></div></div>
+        </div>
     </div>
-
-    <script src="js/main.js"></script>
-
-   
-
+    
 </body>
 </html>
