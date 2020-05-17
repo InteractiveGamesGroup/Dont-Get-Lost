@@ -7,7 +7,7 @@ let canvas,camera, scene, renderer;
 
 // Used to create the Maze
 const UNITWIDTH = 90; // Width of a cubes in the maze
-const UNITHEIGHT = 45; // Height of the cubes in the maze
+const UNITHEIGHT = 200; // Height of the cubes in the maze
 
 // Create cubes variables
 let totalCubesWide = 0; // How many cubes wide the maze will be
@@ -46,7 +46,7 @@ let preventTPose = true;
 let playerVelocity = new THREE.Vector3();
 let playerRotation = 0;
 // How fast the player will move
-let PLAYERSPEED = 400.0;
+let PLAYERSPEED = 600.0;
 
 // Used for keeping track of animation
 let clock;
@@ -196,10 +196,15 @@ function createWorld(){
     // Create the scene where everything will go
     scene = new THREE.Scene();
 
+    //background of the scene
+    scene.background = new THREE.Color( '#87ceeb' );
+
     // Add some fog for effects
-    scene.fog = new THREE.FogExp2(0xcccccc, 0.0030);
+    //scene.fog = new THREE.FogExp2(0xcccccc, 0.0030);
+    scene.fog = new THREE.Fog( 0xcce0ff);
 
     // ------------------- Set renderer settings ----------------------
+    
     renderer.setClearColor(scene.fog.color);
     renderer.shadowMap.enabled = true;
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -208,8 +213,8 @@ function createWorld(){
     // ------------------- Set Camera settings ----------------------
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
     camera.position.x = 0;
-    camera.position.y = 15; // Height the camera will be looking from
-    camera.position.z = 0; 
+    camera.position.y = 30; // Height the camera will be looking from
+    camera.position.z = 70; 
 
     // ------------------- Set Global scene Light settings ----------------------
     addLights();
@@ -225,9 +230,6 @@ function createWorld(){
     // add player to the world
     // scene.add(root);
     camera.add(root);
-    
-
-    
 
     
     //------------------- Extra functionalities ----------------------
@@ -267,9 +269,15 @@ This function is a simple function that groups the
 creation of our lights and adds them to the scene.
 */
 function addLights() {
-    let lightOne = new THREE.DirectionalLight(0xffffff);
-    lightOne.position.set(1, 1, 1);
+    let lightOne = new THREE.DirectionalLight(0xffffff,3);
+    lightOne.position.set(200, 200, 200);
     lightOne.castShadow = true;
+    
+    lightOne.shadow.mapSize.width = 1024;
+    lightOne.shadow.mapSize.height = 512;
+      
+    lightOne.shadow.camera.near = 100;
+		lightOne.shadow.camera.far = 1200;
     scene.add(lightOne);
 
     // Add a second light with half the intensity
@@ -310,10 +318,15 @@ function createMazeCubes() {
   
     // wall details
     let cubeGeo = new THREE.BoxGeometry(UNITWIDTH, UNITHEIGHT, UNITWIDTH);
-    let cubeMat = new THREE.MeshPhongMaterial({
-      color: 0xff0000,
-    });
-  
+    // let cubeMat = new THREE.MeshPhongMaterial({
+    //   color: 0xff0000,
+    // });
+   //Here we are loading a texture
+   let texture = new THREE.TextureLoader().load( 'textures/wall.jpg' );
+
+   //Immediately use the texture for material creation
+   let cubeMat = new THREE.MeshBasicMaterial( { map: texture } );
+ 
     // Keep cubes within boundry walls
     let widthOffset = UNITWIDTH / 2;
     // Put the bottom of the cube at y = 0
@@ -350,15 +363,29 @@ function createMazeCubes() {
 */
 function createGround() {
     // Create ground geometry and material
-    let groundGeo = new THREE.PlaneGeometry(mapSize, mapSize);
-    let groundMat = new THREE.MeshPhongMaterial({ color: 0xA0522D, side: THREE.DoubleSide});
+    // let groundGeo = new THREE.PlaneGeometry(mapSize, mapSize);
+    // let groundMat = new THREE.MeshPhongMaterial({ color: 0xA0522D, side: THREE.DoubleSide});
+   
+    let groundTex = new THREE.TextureLoader().load( "textures/grasslight-big.jpg" );
+	  let groundGeo = new THREE.PlaneBufferGeometry( mapSize, mapSize );
+		let groundMat = new THREE.MeshPhongMaterial( { color: 0xffffff, map: groundTex } );
 
     let ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = degreesToRadians(-90);
     ground.position.set(0, 1, 0);
-    // Rotate the place to ground level
-    ground.rotation.x = degreesToRadians(90);
-    ground.receiveShadow = true;
+    ground.material.map.repeat.set( 10,10 );
+		ground.material.map.wrapS = THREE.RepeatWrapping;
+		ground.material.map.wrapT = THREE.RepeatWrapping;
+		ground.material.map.encoding = THREE.sRGBEncoding;
+	
+		// note that because the ground does not cast a shadow, .castShadow is left false
+		ground.receiveShadow = true;
+//     ground.position.set(0, 1, 0);
+//     // Rotate the place to ground level
+//     ground.rotation.x = degreesToRadians(-90);
+//     ground.receiveShadow = true;
     scene.add(ground);
+
 }
 
 /*
