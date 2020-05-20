@@ -26,7 +26,8 @@ let pointerControlsEnabled = false;
 // HTML elements to be changed
 let blocker
 
-
+let gameOver = false;
+let prevent = false;
 /* 
     Player variables.
 */
@@ -226,6 +227,7 @@ function createWorld(){
     createGround();
     createPerimWalls();
 
+    reloadGame();
 
     // add player to the world
     // scene.add(root);
@@ -596,6 +598,7 @@ function listenForPlayerMovement() {
       case 68: // d
         moveRight = false;
         break;
+
       default:
         prevent = false;
     }
@@ -661,3 +664,67 @@ function dumpObject(obj, lines = [], isLast = true, prefix = '') {
     });
     return lines;
 }
+
+
+// function is called by countDownTimer when the clock has reached 0m 0s to pop up game over message.
+// TODO: must display appropriate message do indicate whether the player has won or lost the game in
+// edition to the given instructions when game is over.
+// TODO: must disengage arrow keys when game has ended to prevent control of character
+function endGame() {
+
+  gameOver = true;
+  pointerControls.enabled = false; // only prevents mouse control
+  blocker.style.display = '';
+  instructions.innerHTML = "GAME OVER </br></br> Press ENTER to restart";
+  instructions.style.display = '';
+  
+}
+
+
+let timeLeft = 300; // these are seconds
+let counter = 0
+
+// function that counts down the timer during game play
+function countDownTimer() {
+
+  counter++;
+  let time = convertSeconds(timeLeft - counter);
+  
+  if(time === 0 + "m" + ' ' + 0 + "s") {
+    clearTimeout(output)
+    document.getElementById("timer").innerHTML = "Timer: " + "0m 0s";
+    endGame()
+  }
+
+  else {
+    document.getElementById("timer").innerHTML = "Timer: " + time;
+  }
+
+}
+
+// converts the passed seconds to minutes and seconds format displayed on the timer
+function convertSeconds(seconds) {
+
+  let min = Math.floor(seconds / 60);
+  let sec = seconds % 60;
+  return min + "m" + ' ' + sec + "s";
+
+}
+
+// function reloads the game when game is over upon user selecting the enter key.
+function reloadGame() {
+
+  let onEnterKeyDown = function(event) {
+
+    if(gameOver) {
+      if(event.keyCode == 13) {
+        location.reload()
+      }
+    }
+
+  }
+
+  document.addEventListener('keydown', onEnterKeyDown, false);
+  
+}
+

@@ -133,3 +133,14 @@ body {
 	  background-position: 0 0;
 	}
   }
+
+  #timer {
+
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 30px;
+	width: 100%;
+	background: #000000
+
+  }

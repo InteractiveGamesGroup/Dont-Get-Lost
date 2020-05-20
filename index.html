@@ -19,17 +19,19 @@
     
     <canvas id="glcanvas"></canvas>
     <div id="blocker">
-        <div id="instructions">
-        <strong>Click to play!</strong>
+        <div id="instructions" onclick="output=setInterval(countDownTimer, 1000)">
+            <strong>Click to play!</strong>
         </div>
     </div> 
     
     <div id="loading">
         <div>
-        <div>...loading...</div>
-        <div class="progress"><div id="progressbar"></div></div>
+            <div>...loading...</div>
+            <div class="progress"><div id="progressbar"></div></div>
         </div>
     </div>
+
+    <div id=timer>Timer:</div>
     
 </body>
 </html>
