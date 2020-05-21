@@ -398,19 +398,35 @@ function createGround() {
 function createPerimWalls() {
     let halfMap = mapSize / 2;  // Half the size of the map
     let sign = 1;               // Used to make an amount positive or negative
-
+  
     // Loop through twice, making two perimeter walls at a time
     for (let i = 0; i < 2; i++) {
         let perimGeo = new THREE.PlaneGeometry(mapSize, UNITHEIGHT);
+        
+       //load the texture
+        let texture3 = new THREE.TextureLoader().load( 'textures/wall.jpg' );
+       
+        //Immediately use the texture for material creation
         // Make the material double sided
-        let perimMat = new THREE.MeshPhongMaterial({ color: 0x464646, side: THREE.DoubleSide });
+        let perimMat = new THREE.MeshBasicMaterial( { map: texture3 , side: THREE.DoubleSide} );
+       // let perimMat = new THREE.MeshPhongMaterial({ color: 0x464646, side: THREE.DoubleSide });
         // Make two walls
         let perimWallLR = new THREE.Mesh(perimGeo, perimMat);
+    
+        perimWallLR.material.map.repeat.set( 10,1 );
+        perimWallLR.material.map.wrapS = THREE.RepeatWrapping;
+        perimWallLR.material.map.wrapT = THREE.RepeatWrapping;
+
         let perimWallFB = new THREE.Mesh(perimGeo, perimMat);
+
+        perimWallFB.material.map.repeat.set( 10,1 );
+        perimWallFB.material.map.wrapS = THREE.RepeatWrapping;
+        perimWallFB.material.map.wrapT = THREE.RepeatWrapping;
+        
 
         // Create left/right wall
         perimWallLR.position.set(halfMap * sign, UNITHEIGHT / 2, 0);
-        perimWallLR.rotation.y = degreesToRadians(90);
+        perimWallLR.rotation.y = degreesToRadians(-90);
         scene.add(perimWallLR);
         // Used later for collision detection
         collidableObjects.push(perimWallLR);
