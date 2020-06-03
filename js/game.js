@@ -1,3 +1,18 @@
+
+// Flags to determine which direction the player is moving
+let moveForward = false;
+let moveBackward = false;
+let moveLeft = false;
+let moveRight = false;
+// Velocity vector for the player
+let playerVelocity = new THREE.Vector3();
+let playerRotation = 0;
+// How fast the player will move
+let PLAYERSPEED = 600.0;
+
+
+
+
 class Game{
 
     constructor() {
@@ -26,25 +41,12 @@ class Game{
 
         // Game blocker (instructions)
         this.blocker = document.getElementById('blocker');
-        console.log(this.blocker);
 
         // Map variables
         this.UNITWIDTH = 90; // Width of a cubes in the maze
         this.UNITHEIGHT = 200; // Height of the cubes in the maze
         this.totalCubesWide = 0; // How many cubes wide the maze will be
         this.mapSize;    // The width/depth of the maze
-
-        // Flags to determine which direction the player is moving
-        this.moveForward = false;
-        this.moveBackward = false;
-        this.moveLeft = false;
-        this.moveRight = false;
-        // Velocity vector for the player
-        this.playerVelocity = new THREE.Vector3();
-        this.playerRotation = 0;
-        // How fast the player will move
-        this.PLAYERSPEED = 600.0;
-
 
         // The game textures
         // this.textureNames = ['grass','wall'];
@@ -307,31 +309,31 @@ class Game{
         // Moves the player 
         // game.movePlayer(delta);
         // Gradual slowdown
-        this.playerVelocity.x -= this.playerVelocity.x * 10.0 * delta;
-        this.playerVelocity.z -= this.playerVelocity.z * 10.0 * delta;
+        playerVelocity.x -= playerVelocity.x * 10.0 * delta;
+        playerVelocity.z -= playerVelocity.z * 10.0 * delta;
         
         // console.log(this.moveForward);
-        if (this.moveForward) {
-            this.playerVelocity.z -= this.PLAYERSPEED * delta;
+        if (moveForward) {
+            playerVelocity.z -= PLAYERSPEED * delta;
         } 
-        if (this.moveBackward) {
-            this.playerVelocity.z += this.PLAYERSPEED * delta;
+        if (moveBackward) {
+            playerVelocity.z += PLAYERSPEED * delta;
         } 
-        if (this.moveLeft) {
-            this.playerVelocity.x -= this.PLAYERSPEED * delta;;
+        if (moveLeft) {
+            playerVelocity.x -= PLAYERSPEED * delta;;
         } 
-        if (this.moveRight) {
-            this.playerVelocity.x += this.PLAYERSPEED * delta;
+        if (moveRight) {
+            playerVelocity.x += PLAYERSPEED * delta;
 
         }
-        if( !( this.moveForward || this.moveBackward || this.moveLeft || this.moveRight)) {
+        if( !( moveForward || moveBackward || moveLeft || moveRight)) {
           // No movement key being pressed. Stop movememnt
-          this.playerVelocity.x = 0;
-          this.playerVelocity.z = 0;
+          playerVelocity.x = 0;
+          playerVelocity.z = 0;
         }
         // console.log(this.controls);
-        this.controls.getObject().translateX(this.playerVelocity.x * delta);
-        this.controls.getObject().translateZ(this.playerVelocity.z * delta);
+        this.controls.getObject().translateX(playerVelocity.x * delta);
+        this.controls.getObject().translateZ(playerVelocity.z * delta);
 
         this.renderer.render( this.scene, this.camera );
         
@@ -405,22 +407,22 @@ class Game{
     
             case 38: // up
             case 87: // w
-                this.moveForward = true;
+                moveForward = true;
                 break;
     
             case 37: // left
             case 65: // a
-                this.moveLeft = true;
+                moveLeft = true;
                 break;
     
             case 40: // down
             case 83: // s
-                this.moveBackward = true;
+                moveBackward = true;
                 break;
     
             case 39: // right
             case 68: // d
-                this.moveRight = true;
+                moveRight = true;
                 break;
           }
       };
@@ -432,22 +434,22 @@ class Game{
     
           case 38: // up
           case 87: // w
-            this.moveForward = false;
+            moveForward = false;
             break;
     
           case 37: // left
           case 65: // a
-            this.moveLeft = false;
+            moveLeft = false;
             break;
     
           case 40: // down
           case 83: // s
-            this.moveBackward = false;
+            moveBackward = false;
             break;
     
           case 39: // right
           case 68: // d
-            this.moveRight = false;
+            moveRight = false;
             break;
         }
       };
