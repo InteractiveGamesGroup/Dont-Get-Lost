@@ -9,30 +9,33 @@
     <link rel="stylesheet" type="text/css" href="css/stylesheet.css">
 
     <!-- JS Scripts -->
-    <script src='js/libs/three.js'></script>
-    <script src="js/controls/PointerLockControls.js"></script>
-    <script src='js/loaders/GLTFLoader.js'></script>
-    <script type="module" src = 'js/libs/SkeletonUtils.js'></script>
+    <script src = 'js/libs/three.js'></script>
+    <script src = 'js/controls/PointerLockControls.js'></script>
     <script src="js/main.js"></script>
+    <!-- <script src = "js/game.js"></script>
+    <script src = "js/main2.js"></script> -->
+    
 
 </head>
-<body onload="setupGame()" >
+<body>
     
     <canvas id="glcanvas"></canvas>
     <div id="blocker">
-        <div id="instructions" onclick="output=setInterval(countDownTimer, 1000)">
+        <div id="instructions" >
             <strong>Click to play!</strong>
         </div>
     </div> 
-    
     <div id="loading">
         <div>
             <div>...loading...</div>
             <div class="progress"><div id="progressbar"></div></div>
         </div>
     </div>
+    
 
-    <div id=timer>Timer:</div>
+    <!-- onclick="output=setInterval(countDownTimer, 1000)" -->
+    
+    <!-- <div id=timer>Timer:</div> -->
     
 </body>
 </html>

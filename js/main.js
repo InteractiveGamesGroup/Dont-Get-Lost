@@ -511,7 +511,7 @@ function installPointerLockControls(){
     
     pointerControls = new THREE.PointerLockControls(camera);
     scene.add(pointerControls.getObject());
-    // player.add(pointerControls.getObject());
+    
     
 }
 
