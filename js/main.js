@@ -12,6 +12,7 @@ const UNITHEIGHT = 200; // Height of the cubes in the maze
 // Create cubes variables
 let totalCubesWide = 0; // How many cubes wide the maze will be
 let collidableObjects = []; // An array of collidable objects used later
+let PLAYERCOLLISIONDISTANCE = 15; //distance of collision of the player from object
 
 // Create Ground variable
 let mapSize;    // The width/depth of the maze
@@ -37,15 +38,20 @@ let root ; // player model
 let mixer; // Used for animation
 let playerWalk;
 let playerIdle;
+let playerRun;
+
 // Flags to determine which direction the player is moving
 let moveForward = false;
 let moveBackward = false;
 let moveLeft = false;
 let moveRight = false;
+let run = false;
 let preventTPose = true;
+
 // Velocity vector for the player
 let playerVelocity = new THREE.Vector3();
 let playerRotation = 0;
+
 // How fast the player will move
 let PLAYERSPEED = 600.0;
 
@@ -115,7 +121,9 @@ function loadPlayerModel() {
 
     // ("Walk" animation) soldier walks but does not change position
     playerWalk = mixer.clipAction(gltf.animations[3]);
-      
+
+    //("Run" animation) soldier runs 
+    playerRun = mixer.clipAction(gltf.animations[1]);
       
     // Dump soldier model scenegraph
     // console.log(dumpObject(root).join('\n'));
@@ -435,6 +443,7 @@ function createPerimWalls() {
         scene.add(perimWallFB);
 
         // Used later for collision detection
+        collidableObjects.push(perimWallLR);
         collidableObjects.push(perimWallFB);
 
         sign = -1; // Swap to negative value
@@ -468,55 +477,117 @@ function animate() {
 
 */
 function movePlayer(delta) {
-    // Gradual slowdown
-    playerVelocity.x -= playerVelocity.x * 10.0 * delta;
-    playerVelocity.z -= playerVelocity.z * 10.0 * delta;
+  // Gradual slowdown
+  playerVelocity.x -= playerVelocity.x * 10.0 * delta;
+  playerVelocity.z -= playerVelocity.z * 10.0 * delta;
+
+  if (detectPlayerCollision() == false) {
   
-    if (moveForward) {
-      playerVelocity.z -= PLAYERSPEED * delta;
-      // playerIdle.stop();
-      playerWalk.play();
-      //soldier.translateZ -= PLAYERSPEED * delta;
-    } 
-    if (moveBackward) {
-      playerVelocity.z += PLAYERSPEED * delta;
-      // playerIdle.stop();
-      playerWalk.play();
-    } 
-    if (moveLeft) {
-      playerVelocity.x -= PLAYERSPEED * delta;
-      // playerRotation += PLAYERSPEED/10 * delta;
-      // playerIdle.stop();
-      playerWalk.play();
-      //soldier.translateX -= PLAYERSPEED * delta;
-    } 
-    if (moveRight) {
-      playerVelocity.x += PLAYERSPEED * delta;
-      // playerIdle.stop();
-      playerWalk.play();
-    }
-    if( !( moveForward || moveBackward || moveLeft || moveRight)) {
-      // No movement key being pressed. Stop movememnt
-      playerVelocity.x = 0;
-      playerVelocity.z = 0;
+      if (moveForward) {
+        playerVelocity.z -= PLAYERSPEED * delta;
+        // playerIdle.stop();
+        playerWalk.play();
+        //soldier.translateZ -= PLAYERSPEED * delta;
+      } 
+      if (moveBackward) {
+        playerVelocity.z += PLAYERSPEED * delta;
+        // playerIdle.stop();
+        playerWalk.play();
+      } 
+      if (moveLeft) {
+        playerVelocity.x -= PLAYERSPEED * delta;
+        // playerRotation += PLAYERSPEED/10 * delta;
+        // playerIdle.stop();
+        playerWalk.play();
+        //soldier.translateX -= PLAYERSPEED * delta;
+      } 
+      if (moveRight) {
+        playerVelocity.x += PLAYERSPEED * delta;
+        playerWalk.play();
+      }
       
-      // Stop player from walking
-      playerWalk.stop();
-      playerIdle.play();
+      if(run && moveForward){
+        playerVelocity.z -= (PLAYERSPEED*2)*delta;
+        playerRun.play();
+      }
+      if(run && moveBackward){
+        playerVelocity.z += (PLAYERSPEED*2)*delta;
+        playerRun.play();
+      }
+      if(run && moveLeft){
+        playerVelocity.x -= (PLAYERSPEED*2)*delta;
+        playerRun.play();
+      }
+      if(run && moveRight){
+        playerVelocity.x += (PLAYERSPEED*2)*delta;
+        playerRun.play();
+      }
+      pointerControls.getObject().translateX(playerVelocity.x * delta);
+      pointerControls.getObject().translateZ(playerVelocity.z * delta);
+    }else{
+        if( !( moveForward || moveBackward || moveLeft || moveRight)) {
+          // No movement key being pressed. Stop movememnt
+          playerVelocity.x = 0;
+          playerVelocity.z = 0;
+          
+          // Stop player from walking and running just idle
+          playerWalk.stop();
+          playerIdle.play();
+          playerRun.stop();
+        }
+      }
     }
+  
+  /*This function determines if the player is colliding with a wall or object*/
+  
+  function detectPlayerCollision() {
+    //The rotation matrix to apply to our direction vector
+    // Undefined by default to indicate ray should coming from front
+    var rotationMatrix;
+    // Get direction of camera
+    var cameraDirection = pointerControls.getDirection(new THREE.Vector3(0, 0, 0)).clone();
+  
+    // Check which direction we're moving (not looking)
+    // Flip matrix to that direction so that we can reposition the ray
+    if (moveBackward) {
+        rotationMatrix = new THREE.Matrix4();
+        rotationMatrix.makeRotationY(degreesToRadians(180));
+    }
+    else if (moveLeft) {
+        rotationMatrix = new THREE.Matrix4();
+        rotationMatrix.makeRotationY(degreesToRadians(90));
+    }
+    else if (moveRight) {
+        rotationMatrix = new THREE.Matrix4();
+        rotationMatrix.makeRotationY(degreesToRadians(270));
+    }
+  
+    // Player is moving forward, no rotation matrix needed
+    if (rotationMatrix !== undefined) {
+        cameraDirection.applyMatrix4(rotationMatrix);
+    }
+  // Apply ray to player camera
+  var rayCaster = new THREE.Raycaster(pointerControls.getObject().position, cameraDirection);
 
-    // if(!(moveLeft || moveRight)){
-    //   // No left/right movement detected. Stop Movement.
-    //   playerRotation = 0;
-    // }
-    pointerControls.getObject().translateX(playerVelocity.x * delta);
-    pointerControls.getObject().translateZ(playerVelocity.z * delta);
-    // pointerControls.getObject().rotateY(playerRotation * delta);
-    // player.rotateZ(playerRotation * delta);
-
-    // player.translateX(playerVelocity.x * delta);
-    // player.translateZ(playerVelocity.z * delta);
+  // If our ray hit a collidable object, return true
+  if (rayIntersect(rayCaster, PLAYERCOLLISIONDISTANCE)) {
+      return true;
+  } else {
+      return false;
   }
+}
+  //Takes the ray and checks whether it's colliding with anything from collidable objects list
+  //returns true if certain distance away from objects
+function rayIntersect(ray, distance) {
+  var intersects = ray.intersectObjects(collidableObjects);
+  for (var i = 0; i < intersects.length; i++) {
+      if (intersects[i].distance < distance) {
+          return true;
+        
+      }
+  }
+  return false;
+}
 
 /*
     The game uses THREE.PointerLockControls to let the user freely 
@@ -587,6 +658,10 @@ function listenForPlayerMovement() {
         case 68: // d
           moveRight = true;
           break;
+
+        case 16://shift
+          run = true;
+          break;
       }
   };
   
@@ -613,6 +688,10 @@ function listenForPlayerMovement() {
       case 39: // right
       case 68: // d
         moveRight = false;
+        break;
+
+      case 16://shift
+        run = false;
         break;
 
       default:
