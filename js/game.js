@@ -26,6 +26,7 @@ class Game{
 
         // Game blocker (instructions)
         this.blocker = document.getElementById('blocker');
+        console.log(this.blocker);
 
         // Map variables
         this.UNITWIDTH = 90; // Width of a cubes in the maze
@@ -38,7 +39,6 @@ class Game{
         this.moveBackward = false;
         this.moveLeft = false;
         this.moveRight = false;
-        this.preventTPose = true;
         // Velocity vector for the player
         this.playerVelocity = new THREE.Vector3();
         this.playerRotation = 0;
@@ -62,12 +62,7 @@ class Game{
             onComplete: function () {
 
                 game.init();
-                // game.installControls();
-                // game.listenForPlayerMovement();
-                // game.getPointerLock();
                 game.animate();
-                
-                
             }
         }
 
@@ -77,7 +72,6 @@ class Game{
         // Used for keeping track of animation
         this.clock = new THREE.Clock();
         
-
         // Loader used to load assets before game begins
         const preloader = new Preloader(options,this.textures);
 
@@ -308,19 +302,50 @@ class Game{
         const game = this;
         const delta = this.clock.getDelta();
 
-        game.renderer.render( game.scene, game.camera );
         requestAnimationFrame( function(){ game.animate(); } );
         
-
-        // Moves the player i.e the camera
+        // Moves the player 
         // game.movePlayer(delta);
+        // Gradual slowdown
+        this.playerVelocity.x -= this.playerVelocity.x * 10.0 * delta;
+        this.playerVelocity.z -= this.playerVelocity.z * 10.0 * delta;
+        
+        // console.log(this.moveForward);
+        if (this.moveForward) {
+            this.playerVelocity.z -= this.PLAYERSPEED * delta;
+        } 
+        if (this.moveBackward) {
+            this.playerVelocity.z += this.PLAYERSPEED * delta;
+        } 
+        if (this.moveLeft) {
+            this.playerVelocity.x -= this.PLAYERSPEED * delta;;
+        } 
+        if (this.moveRight) {
+            this.playerVelocity.x += this.PLAYERSPEED * delta;
+
+        }
+        if( !( this.moveForward || this.moveBackward || this.moveLeft || this.moveRight)) {
+          // No movement key being pressed. Stop movememnt
+          this.playerVelocity.x = 0;
+          this.playerVelocity.z = 0;
+        }
+        // console.log(this.controls);
+        this.controls.getObject().translateX(this.playerVelocity.x * delta);
+        this.controls.getObject().translateZ(this.playerVelocity.z * delta);
+
+        this.renderer.render( this.scene, this.camera );
+        
+        
 
     }
 
     movePlayer(delta) {
+        const game = this;
         // Gradual slowdown
-        this.playerVelocity.x -= this.playerVelocity.x * 10.0 * delta;
+        game .playerVelocity.x -= this.playerVelocity.x * 10.0 * delta;
         this.playerVelocity.z -= this.playerVelocity.z * 10.0 * delta;
+        // console.log(this.playerVelocity);
+        // console.log(game.movForward);
       
         if (this.moveForward) {
             this.playerVelocity.z -= this.PLAYERSPEED * delta;
@@ -353,26 +378,23 @@ class Game{
     }
 
     getPointerLock() {
-        console.log(this.canvas);
+        const game = this;
         document.onclick = function () {
-            console.log(this.canvas);
-            this.canvas.requestPointerLock();
+            game.canvas.requestPointerLock();
         }
-        document.addEventListener('pointerlockchange', game.lockChange(), false); 
-    }
-
-    lockChange() {
-        // Turn on controls
-        if (document.pointerLockElement === this.canvas) {
-            // Hide blocker and instructions
-            this.blocker.style.display = "none";
-            this.controls.enabled = true;
-        // Turn off the controls
-        } else {
-            // Display the blocker and instruction
-            this.blocker.style.display = "";
-            this.controls.enabled = false;
-        }
+        document.addEventListener('pointerlockchange', ()=>{
+                // Turn on controls
+            if (document.pointerLockElement === game.canvas) {
+                // Hide blocker and instructions
+                game.blocker.style.display = "none";
+                game.controls.enabled = true;
+            // Turn off the controls
+            } else {
+                // Display the blocker and instruction
+                game.blocker.style.display = "";
+                game.controls.enabled = false;
+            }
+        }, false); 
     }
 
     listenForPlayerMovement() {
@@ -383,23 +405,23 @@ class Game{
     
             case 38: // up
             case 87: // w
-              moveForward = true;
-              break;
+                this.moveForward = true;
+                break;
     
             case 37: // left
             case 65: // a
-              moveLeft = true;
-              break;
+                this.moveLeft = true;
+                break;
     
             case 40: // down
             case 83: // s
-              moveBackward = true;
-              break;
+                this.moveBackward = true;
+                break;
     
             case 39: // right
             case 68: // d
-              moveRight = true;
-              break;
+                this.moveRight = true;
+                break;
           }
       };
       
@@ -410,26 +432,23 @@ class Game{
     
           case 38: // up
           case 87: // w
-            moveForward = false;
+            this.moveForward = false;
             break;
     
           case 37: // left
           case 65: // a
-            moveLeft = false;
+            this.moveLeft = false;
             break;
     
           case 40: // down
           case 83: // s
-            moveBackward = false;
+            this.moveBackward = false;
             break;
     
           case 39: // right
           case 68: // d
-            moveRight = false;
+            this.moveRight = false;
             break;
-    
-          default:
-            prevent = false;
         }
       };
     
@@ -444,7 +463,6 @@ class Game{
 class Preloader{
 
     constructor(options,textures){
-
         // Progress Bar
         let progressbarElem = document.querySelector('#progressbar');
 
@@ -452,25 +470,20 @@ class Preloader{
 
         // Loading the textures
         this.manager.onProgress = (url, itemsLoaded, itemsTotal) => {
-            console.log("Loading textures")
             progressbarElem.style.width = `${itemsLoaded / itemsTotal * 100 | 0}%`;
         };
 
-        
         for( let asset of options.assets){
             let tex = this.loadTexture(asset);
-            console.log(tex);
             textures.push(tex);
         }
-
         this.manager.onLoad = options.onComplete;
 
     }
 
     loadTexture(url){
-
         let textureLoader = new THREE.TextureLoader(this.manager);
-        let texture = textureLoader.load(url)
+        let texture = textureLoader.load(url);
         return texture;
     }
 }
