@@ -8,7 +8,7 @@ let moveRight = false;
 let playerVelocity = new THREE.Vector3();
 let playerRotation = 0;
 // How fast the player will move
-let PLAYERSPEED = 600.0;
+let PLAYERSPEED = 900.0;
 
 
 
@@ -60,6 +60,7 @@ class Game{
             assets:[
                 `${this.assetsPath}grass.jpg`,
                 `${this.assetsPath}wall.jpg`,
+                `${this.assetsPath}wall.jpg`,
             ],
             onComplete: function () {
 
@@ -94,36 +95,54 @@ class Game{
 
         // Create the scene where everything will go
         this.scene = new THREE.Scene();
-        //background of the scene
+        //background of the scene  
         this.scene.background = new THREE.Color( '#87ceeb' );
         // Add some fog for effects
-        //this.scene.fog = new THREE.FogExp2(0xcccccc, 0.0030);
-        this.scene.fog = new THREE.Fog( 0xcce0ff);
+        this.scene.fog = new THREE.FogExp2(0xcccccc, 0.0030);
+        // this.scene.fog = new THREE.Fog( 0xcce0ff);
 
         // ------------------- Set Camera settings ----------------------
-        this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
+        const fov = 60;
+        const aspect = window.innerWidth / window.innerHeight;  // the canvas default
+        const near = 1;
+        const far = 1500;
+        this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
         this.camera.position.x = 0;
-        this.camera.position.y = 30; // Height the camera will be looking from
-        this.camera.position.z = 70; 
+        this.camera.position.y = 50; // Height the camera will be looking from
+        this.camera.position.z = 0; 
 
         // ------------------- Set Global scene Light settings ----------------------
-        // Add the first light 
-        let lightOne = new THREE.DirectionalLight(0xffffff,3);
-        lightOne.position.set(200, 200, 200);
-        lightOne.castShadow = true;
-        lightOne.shadow.mapSize.width = 1024;
-        lightOne.shadow.mapSize.height = 512;
-        lightOne.shadow.camera.near = 100;
-        lightOne.shadow.camera.far = 1200;
-        this.scene.add(lightOne);
+        // Add sunlight to the scene 
+        let sunLight = new THREE.DirectionalLight(0xffffff,0.5);
+        sunLight.castShadow = true;
+        sunLight.position.set(900, 600, 800);
+        sunLight.target.position.set(0,30, 70);
+        sunLight.shadow.mapSize.width = 1024;
+        sunLight.shadow.mapSize.height = 1024;
+        sunLight.shadow.camera.near = 50;
+        sunLight.shadow.camera.far = 2000;
+        sunLight.shadow.camera.right = 700;
+        sunLight.shadow.camera.left = -700;
+        sunLight.shadow.camera.bottom = -300;
+        sunLight.shadow.camera.top = 300;
+
+        this.scene.add(sunLight);
+        this.scene.add(sunLight.target);
+        sunLight.target.updateMatrixWorld();
+        sunLight.shadow.camera.updateProjectionMatrix();
+
+        //Create a helpers the the directional light
+        // let shadowhelper = new THREE.CameraHelper( sunLight.shadow.camera );
+        // this.scene.add( shadowhelper );
+        // let dirHelper = new THREE.DirectionalLightHelper( sunLight,5 );
+        // this.scene.add( dirHelper );
+
+        // Second Ambience light
+        let ambienceLight = new THREE.AmbientLight( 0x404040 ); // soft white light
+        this.scene.add( ambienceLight  );
     
-        // Add a second light with half the intensity
-        let lightTwo = new THREE.DirectionalLight(0xffffff, .5);
-        lightTwo.position.set(1, -1, -1);
-        lightTwo.castShadow = true;
-        this.scene.add(lightTwo);
-        
-        //------------------- Create the games visible objects ----------------------
+    
+        //------------------- Create the game's visible objects ----------------------
         const game = this;
 
         // Add the walls(cubes) of the maze
@@ -171,23 +190,23 @@ class Game{
         [0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, ],
         [0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, ],
         [0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, ],
-        [0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, ],
-        [0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, ],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, ],
-        [1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, ],
+        [0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, ],
+        [0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, ],
+        [0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, ],
+        [1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, ],
         [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, ],
-        [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, ],
+        [0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, ],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ],
         [0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, ],
         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, ],
         [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, ],
-        [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, ],
-        [0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, ],
-        [1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, ],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ],
+        [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, ],
+        [0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, ],
+        [1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, ],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, ],
         [1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, ],
-        [0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, ],
-        [0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, ]
+        [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, ],
+        [0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, ]
         ];
     
         // wall details
@@ -196,11 +215,11 @@ class Game{
         //   color: 0xff0000,
         // });
 
-        // Wall teexture
-        let wall = this.textures[1];
+        // Wall texture
+        let interior_wall = this.textures[1];
 
         //Immediately use the texture for material creation
-        let cubeMat = new THREE.MeshBasicMaterial( { map: wall } );
+        let cubeMat = new THREE.MeshBasicMaterial( { map: interior_wall } );
     
         // Keep cubes within boundry walls
         let widthOffset = this.UNITWIDTH / 2;
@@ -236,10 +255,15 @@ class Game{
 
     createGround() {
         // Create ground geometry and material
-        // let groundGeo = new THREE.PlaneGeometry(mapSize, mapSize);
+        // let groundGeo = new THREE.PlaneGeometry(this.mapSize, this.mapSize);
         // let groundMat = new THREE.MeshPhongMaterial({ color: 0xA0522D, side: THREE.DoubleSide});
     
+        // Grass Texture
         let grass = this.textures[0];
+        grass.repeat.set(10,10);
+        grass.wrapS = THREE.RepeatWrapping;
+        grass.wrapT = THREE.RepeatWrapping;
+        grass.encoding = THREE.sRGBEncoding;
 
         let groundGeo = new THREE.PlaneBufferGeometry( this.mapSize, this.mapSize );
         let groundMat = new THREE.MeshPhongMaterial( { color: 0xffffff, map: grass } );
@@ -247,18 +271,19 @@ class Game{
         let ground = new THREE.Mesh(groundGeo, groundMat);
         ground.rotation.x = this.degreesToRadians(-90);
         ground.position.set(0, 1, 0);
-        ground.material.map.repeat.set( 10,10 );
-            ground.material.map.wrapS = THREE.RepeatWrapping;
-            ground.material.map.wrapT = THREE.RepeatWrapping;
-            ground.material.map.encoding = THREE.sRGBEncoding;
-        
-            // note that because the ground does not cast a shadow, .castShadow is left false
-            ground.receiveShadow = true;
+        ground.receiveShadow = true;
+        // ground.material.map.repeat.set( 10,10 );
+        // ground.material.map.wrapS = THREE.RepeatWrapping;
+        // ground.material.map.wrapT = THREE.RepeatWrapping;
+        // ground.material.map.encoding = THREE.sRGBEncoding;
+        this.scene.add(ground);
+
+
     //     ground.position.set(0, 1, 0);
     //     // Rotate the place to ground level
     //     ground.rotation.x = degreesToRadians(-90);
     //     ground.receiveShadow = true;
-        this.scene.add(ground);
+        
 
     }
 
@@ -269,11 +294,22 @@ class Game{
         // Loop through twice, making two perimeter walls at a time
         for (let i = 0; i < 2; i++) {
             let perimGeo = new THREE.PlaneGeometry(this.mapSize, this.UNITHEIGHT);
+
+            // Wall texture
+            let wall = this.textures[2];
             // Make the material double sided
-            let perimMat = new THREE.MeshPhongMaterial({ color: 0x464646, side: THREE.DoubleSide });
+            // let perimMat = new THREE.MeshPhongMaterial({ color: 0x464646, side: THREE.DoubleSide });
+            let perimMat = new THREE.MeshBasicMaterial({ map:wall, side: THREE.DoubleSide });
             // Make two walls
             let perimWallLR = new THREE.Mesh(perimGeo, perimMat);
+            perimWallLR.material.map.repeat.set(10,1);
+            perimWallLR.material.map.wrapS = THREE.RepeatWrapping;
+            perimWallLR.material.map.wrapT = THREE.RepeatWrapping;
+
             let perimWallFB = new THREE.Mesh(perimGeo, perimMat);
+            perimWallFB.material.map.repeat.set(10,1);
+            perimWallFB.material.map.wrapS = THREE.RepeatWrapping;
+            perimWallFB.material.map.wrapT = THREE.RepeatWrapping;
     
             // Create left/right wall
             perimWallLR.position.set(halfMap * sign, this.UNITHEIGHT / 2, 0);
