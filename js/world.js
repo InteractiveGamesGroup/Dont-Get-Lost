@@ -1,12 +1,10 @@
 
-// VARIABLES USED TO MOVE PLAYER
 // Velocity vector for the player
 let playerVelocity = new THREE.Vector3();
-let playerRotation = 0;
 // How fast the player will move
 let PLAYERSPEED = 900.0;
-
-const PLAYERCOLLISIONDISTANCE = 35; //distance of collision of the player from object
+// Distance of collision of the player from object
+const PLAYERCOLLISIONDISTANCE = 35; 
 
 
 class World {
@@ -65,6 +63,16 @@ class World {
       // ------------------- Game Counter ----------------------
       this.counter = 0;
       this.timeLeft = 300;
+      this.timeinterval;
+      this.time;
+
+      // ------------------- Switch cameras ----------------------
+      this.cameraModes = {
+        Near: false,
+        Back: true,
+        Wide: false
+      };
+
 
   }
 
@@ -85,7 +93,7 @@ class World {
       this.scene.fog = new THREE.Fog( 0xcce0ff);
       // ------------------- Set Camera settings ----------------------
       this.camera = new Camera();
-
+      
       // ------------------- Set Global scene Light settings ----------------------
       // Add sunlight to the scene 
       let sunLight = new THREE.DirectionalLight(0xffffff,0.5);
@@ -121,10 +129,13 @@ class World {
       world.scene.add(this.player.returnObject());
       this.player.listenForMovement();
       // Dump player object
-      console.log(dumpObject(world.player.root).join('\n'));
+      // console.log(dumpObject(world.player.root).join('\n'));
 
       // Play idle clip when game begins
       this.player.clipActions.Idle.play();
+
+      // Switch cameras functionality
+      this.switchCamera();
 
       // ------------------- Setup End Game functionality ----------------------
       // Add player to collidable playerwa
@@ -179,7 +190,7 @@ class World {
       //Controls look at the player
       const playerClone = player.returnObject().clone();
       let playerPos = playerClone.position;
-      playerPos.y += 80;      
+      playerPos.y += 80; 
       world.controls.target.set( playerPos.x, playerPos.y, playerPos.z );
       // world.controls.target.set( 0, 320, 0);
       // world.controls.target.set( -850, 100, -900 );
@@ -373,7 +384,7 @@ class World {
     world.door.object.add(root);
 
     // Dump Door scene onto console
-    console.log(dumpObject(root).join('\n'));
+    // console.log(dumpObject(root).join('\n'));
     
 
     // ------------------- Animation ----------------------
@@ -481,11 +492,14 @@ class World {
          world.startAnimation();
          world.controls.enabled = true;
          blocker.style.display = "none";
+        //  resume timer
+        world.initialiseTimer();
 
         }else{
           world.stopAnimation();
           world.controls.enabled = false;
           blocker.style.display = "";
+          world.pauseTimer();
         }
       }
 
@@ -600,26 +614,71 @@ class World {
     const timer = document.getElementById("timer");
     const gameOver = document.getElementById("game-over");
 
-    const timeinterval = setInterval(()=>{
+    world.timeinterval = setInterval( ()=>{
 
       world.counter++;
-      let time = convertSeconds(world.timeLeft - world.counter);
+      world.time = convertSeconds(world.timeLeft - world.counter);
 
-      if(time === 0 + "m" + ' ' + 0 + "s"){
-        clearInterval(timeinterval);
+      if(world.time === 0 + "m" + ' ' + 0 + "s"){
+        clearInterval(world.timeinterval);
         timer.innerHTML = "Timer: " + "0m 0s";
         this.stopAnimation();
         gameOver.style.display = "";
         this.restartGame();
       }else{
-        timer.innerHTML = "Timer: "+time;
+        timer.innerHTML = "Timer: "+world.time;
       }
 
     },1000);
   }
 
+  pauseTimer(){
+    const world = this;
+    const timer = document.getElementById("timer");
+    // Stop Time
+    clearInterval(world.timeinterval);
+    // Show time left
+    timer.innerHTML = "Timer: "+world.time;
+  }
+
+  switchCamera(){
+
+    const world = this;
+    const camera = world.camera.returnObject();
+    const player = world.player;
+
+    const playerClone = player.returnObject().clone();
+    console.log(playerClone);
+    let playerPos = playerClone.position;
+    console.log(playerPos);
+
+    document.addEventListener('keydown',(event)=>{
+      if(event.keyCode == 81) {
+
+        // Check current camera
+        if(world.cameraModes.Back){
+          // Switch to wide
+          world.cameraModes.Wide = true;
+          world.cameraModes.Back = false;
+          world.controls.minDistance = 140;
+          world.controls.maxDistance = 150;
+          world.controls.update();
+        }
+        else if(world.cameraModes.Wide){
+          // Switch camera to back
+          world.cameraModes.Wide = false;
+          world.cameraModes.Back = true;
+          world.controls.minDistance = 50;
+          world.controls.maxDistance = 80;
+          world.controls.update();
+        }
+      }
+    });
+  }
+
 }
 
+// Convert
 function convertSeconds(seconds) {
 
   let min = Math.floor(seconds / 60);
@@ -628,9 +687,8 @@ function convertSeconds(seconds) {
 
 }
 
-/*
-    This function helps to dump a scene graph of an object onto the console.
-*/
+
+// This function helps to dump a scene graph of an object onto the console.
 function dumpObject(obj, lines = [], isLast = true, prefix = '') {
   const localPrefix = isLast ? '└─' : '├─';
   lines.push(`${prefix}${prefix ? localPrefix : ''}${obj.name || '*no-name*'} [${obj.type}]`);
