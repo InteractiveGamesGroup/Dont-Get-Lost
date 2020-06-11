@@ -10,17 +10,16 @@ class Player{
 
         // ------------------- Set Character ----------------------
         // Root object
-        const root = model.gltf.scene;
-        root.scale.set( 50, 50, 50 );
-        root.castShadow = true;
-        this.addComponent(root);
+        this.root = model.gltf.scene;
+        this.root.scale.set( 60, 60, 60 );
+        this.root.castShadow = true;
+        this.addComponent(this.root);
         // // Animation
-        this.mixer = new THREE.AnimationMixer(root);
+        this.mixer = new THREE.AnimationMixer(this.root);
         this.animations = {};
         this.clipActions = {};
         this.prepareAnimations(model);
         this.prepareClipActions();
-
 
         this.PLAYERSPEED = 600.0;
         // Move Directions
@@ -32,7 +31,6 @@ class Player{
         };
         this.run = false;
 
-       
         // Movement vectors
         this.velocity = new THREE.Vector3();
         this.acceleration = new THREE.Vector3(0, -150, 0);
@@ -42,14 +40,15 @@ class Player{
         this.listenForMovement();
   
     }
-    ;
   
     addComponent(component){
       this.gameObject.add(component);
     }
+
     returnObject(){
       return this.gameObject;
     }
+
     listenForMovement(){
         // Inputs
         const player = this;
@@ -109,6 +108,7 @@ class Player{
             }
         }, false);
     }
+
     prepareAnimations(model){
         const player = this;
         
@@ -118,6 +118,7 @@ class Player{
         });
         // model.animations = animsName;
     }
+
     prepareClipActions(){
         const player = this;
 
@@ -128,6 +129,7 @@ class Player{
         });
 
     }
+
     updateClip(delta){
         this.mixer.update(delta);
     }
