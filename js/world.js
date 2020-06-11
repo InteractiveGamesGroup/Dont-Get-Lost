@@ -20,16 +20,18 @@ class World {
       this.clock = new THREE.Clock();
       this.paused = false;
       this.controls;
-      // this.clock = new THREE.Clock(false);
       // ------------------- Load assets(models, textures etc.) ----------------------
       const world = this;
       this.textures = {
           inner_wall: { url:'/assets/textures/wall.jpg'},
           outer_wall: { url:'/assets/textures/wall.jpg'},
-          grass: {url:'/assets/textures/grass.jpg'}
+          grass: {url:'/assets/textures/grass.jpg'},
+          wood: {url: '/assets/textures/wood.jpg'},
+          window: {url: '/assets/textures/window.png'}
       }
       this.models = {
-          soldier: {url:'/assets/models/SoldierModel.gltf'}
+          soldier: {url:'/assets/models/SoldierModel.gltf'},
+          door: {url:'/assets/models/WoodenDoor.gltf'}
       }
       const options ={
         onComplete: function () {
@@ -52,8 +54,12 @@ class World {
       this.totalCubesWide = 0; // How many cubes wide the maze will be
       this.mapSize;    // The width/depth of the maze
 
+      // Setup door
+      this.door = {} // Empty door object
+
       // ------------------- Create the player ----------------------
       this.player;
+      this.collidablePlayer = [];
       this.collidableObjects = []; // An array of collidable objects
 
       // ------------------- Game Counter ----------------------
@@ -109,13 +115,25 @@ class World {
       world.createGround();
       world.createPerimWalls();
 
-      // Create the player
+      // ------------------- Create Player ----------------------
       this.player = new Player("Soldier",world.models.soldier);
       // this.player.addComponent(world.camera.returnObject());
       world.scene.add(this.player.returnObject());
       this.player.listenForMovement();
+      // Dump player object
+      console.log(dumpObject(world.player.root).join('\n'));
+
       // Play idle clip when game begins
       this.player.clipActions.Idle.play();
+
+      // ------------------- Setup End Game functionality ----------------------
+      // Add player to collidable playerwa
+      world.collidablePlayer.push(world.player.returnObject());
+      // Setup Wooden door
+      world.setupDoor("Wooden Door",world.models.door);
+      // Collidable objects
+      world.collidableObjects.push(world.door.doorMesh)
+      world.scene.add(world.door.object);
 
       // ------------------- Renderer and Canvas ----------------------
       this.canvas = document.getElementById("glcanvas");
@@ -161,53 +179,23 @@ class World {
       //Controls look at the player
       const playerClone = player.returnObject().clone();
       let playerPos = playerClone.position;
-      playerPos.y += 70;      
+      playerPos.y += 80;      
       world.controls.target.set( playerPos.x, playerPos.y, playerPos.z );
-    
-      //world.controls.target.set( -600, 320, -700 );
+      // world.controls.target.set( 0, 320, 0);
+      // world.controls.target.set( -850, 100, -900 );
       world.controls.update();
 
-
-      // // Enable animation of the player
+      // Enable animation of the player
       player.updateClip(delta);
+
+      // Animate/render the wooden door
+      world.door.mixer.update(delta);
 
       // Detect collision
       this.movePlayer(delta);
-        // playerVelocity.x -= playerVelocity.x * 10.0 * delta;
-        // playerVelocity.z -= playerVelocity.z * 10.0 * delta;
-          
-        // if (player.moveDirection.FORWARD) {
-        //   playerVelocity.z -= PLAYERSPEED * delta;
-        //   player.clipActions.Walk.play();
-        // } 
-        // if (player.moveDirection.BACKWARD) {
-        //   playerVelocity.z += PLAYERSPEED * delta;
-        //   player.clipActions.Walk.play();
-        // } 
-        // if (player.moveDirection.LEFT) {
-        //   // playerVelocity.x -= PLAYERSPEED * delta;
-        //   player.gameObject.rotateY(PLAYERSPEED/200 * delta);
-        //   // player.clipActions.Walk.play();
-        // } 
-        // if (player.moveDirection.RIGHT) {
-        //   // playerVelocity.x += PLAYERSPEED * delta;
-        //   player.gameObject.rotateY(-(PLAYERSPEED/200 * delta) );
-        //   player.clipActions.Walk.play();
 
-        // }
-        // if( !( player.moveDirection.FORWARD|| player.moveDirection.BACKWARD 
-        //   || player.moveDirection.LEFT || player.moveDirection.RIGHT)) {
-        //   // No movement key being pressed. Stop movememnt
-        //   playerVelocity.x = 0;
-        //   playerVelocity.z = 0;
-        //   player.clipActions.Walk.stop();
-        // }
-
-        // player.gameObject.translateX(playerVelocity.x * delta);
-        // player.gameObject.translateZ(playerVelocity.z * delta);
-        // world.controls.getObject().translateX(playerVelocity.x * delta);
-        // world.controls.getObject().translateZ(playerVelocity.z * delta);
       
+       
       this.renderer.render( world.scene, world.camera.returnObject() );
 
   }
@@ -366,117 +354,87 @@ class World {
       }
   }
 
-  addMouseControl(){
-    const player = this.player.returnObject();
-    const camera = this.camera.returnObject();
+  setupDoor(name,model){
+
     const world = this;
 
-    let x = camera.position.x;
-    let y = camera.position.y;
-    let z = camera.position.z;
+    // Name
+    world.door.name = name;
 
+    // ------------------- Door holder object ----------------------
+    world.door.object = new THREE.Object3D();
+    world.door.object.position.x = -855;
+    world.door.object.position.y = 0;
+    world.door.object.position.z = -905;
+
+    // ------------------- Set Door ----------------------
+    const root = model.gltf.scene;
+    root.scale.set( 100, 90, 50);
+    world.door.object.add(root);
+
+    // Dump Door scene onto console
+    console.log(dumpObject(root).join('\n'));
     
-    document.addEventListener('mousemove', function(event) {
-      event.preventDefault();
-      
-      // console.log(event.movementX);
-      // console.log(event.movementY);
 
-      let newX = 2 *event.movementX/window.innerWidth -1;
-      let newY = -2 *event.movementY/window.innerHeight +1;
+    // ------------------- Animation ----------------------
+    world.door.mixer = new THREE.AnimationMixer(root);
+    world.door.animations = {};
+    world.door.clipActions = {};
 
-      let temp_point3D = new THREE.Vector3(newX,newY,0);
-      
-
-      let viewProjectionInverse = camera.projectionMatrixInverse;
-      
-      let point3D = temp_point3D.applyMatrix3(viewProjectionInverse);
-     
-
-      camera.position.x = point3D.x;
-      camera.position.y = point3D.y;
-      camera.position.z = point3D.z;
-      console.log(point3D.x);
-      
+    // ------------------- Prepare clip animations ----------------------
+    model.gltf.animations.forEach( (clip)=>{
+      world.door.animations[clip.name] = clip;
+    });
+    Object.values(world.door.animations).forEach( (clip)=>{
+      world.door.clipActions[clip.name] = world.door.mixer.clipAction(clip);
+    })
 
 
+    // ------------------- Set Texures ----------------------
+    // Textures
+    let wood = this.textures.wood.text;
+    let glass = this.textures.window.text;
 
-    }, false);
+    // Meshes
+    world.door.doorMesh = root.getObjectByName('Cube.022_1');
+    let windowMesh = root.getObjectByName('Cube.022_0');
+    let knockerMesh = root.getObjectByName('WoodenKnocker');
+    let doorHandleMesh = root.getObjectByName('Plane.023_0');
+    
+    // Materials
+    world.door.doorMesh.material =  new THREE.MeshBasicMaterial({ map: wood, side: THREE.DoubleSide });
+    windowMesh.material =  new THREE.MeshBasicMaterial( { map: glass, side: THREE.DoubleSide } );
+    knockerMesh.material = new THREE.MeshBasicMaterial( { map: wood, side: THREE.DoubleSide  } );
+    doorHandleMesh.material = new THREE.MeshBasicMaterial( { color:"black" } );
+
+    // Door collision
+    this.doorCollide()
   }
 
-  removeMouseControl(){
-    const camera = this.camera.returnObject();
-    console.log("remove mouse control");
-    document.addEventListener( 'mousemove', function(event){
-      event.preventDefault();
-      camera.rotation.x = 0;
-      camera.rotation.y = 0;
-      camera.rotation.z = 0;
-    }, false );
-  }
-  
-  installPointerLock(){
-    const blocker = document.getElementById('blocker');
-    const world = this;
-
-    document.onclick = function(){
-  
-      PL.requestPointerLock(this.canvas,function(){
-        console.log("POINTER LOCK");
-        blocker.style.display = "none";
-        // world.addMouseControl();
-        world.startAnimation();
-        world.initialiseTimer();
-
-      },function(){
-        console.log("POINTER UNLOCK");
-        blocker.style.display = "";
-        // world.removeMouseControl();
-        world.stopAnimation();
-      }, function() {
-        alert('Error: Pointer Lock request Failed');
-      });
-  
-    }
-  }
-
-  createPointerLockControls(){
-    const world = this;
-    const camera = world.camera.returnObject();
-    world.controls = new THREE.PointerLockControls(camera);
-    world.scene.add(world.controls.getObject());
-  }
-
-  installPointerLockControls(){
+  doorCollide(){
 
     const world = this;
+    // ------------------- Door collision ----------------------
+    let collide = false;
+    let doorPos = world.door.object.position.clone();
+    doorPos.y += 60;
+    // Door direction
+    let doorDir = new THREE.Vector3();
+    world.door.object.getWorldDirection(doorDir);
+    doorDir.normalize();
 
-    // Request Pointer Lock
-    document.onclick = function () {
-      world.canvas.requestPointerLock();
-    }
-
-    // if pointer is locked
-    document.addEventListener('pointerlockchange', ()=>{
-
-      if (document.pointerLockElement === world.canvas) {
-        world.controls.enabled = true;
-        console.log("POINTER LOCK");
-        blocker.style.display = "none";
-        // world.addMouseControl();
-        world.startAnimation();
-        world.initialiseTimer();
-        
-      
-      } else {
-        console.log("POINTER UNLOCK");
-        world.controls.enabled = false;
-        blocker.style.display = "";
-        // world.removeMouseControl();
-        world.stopAnimation();
+    // console.log(doorDir);
+    // Create a new Raycaster;
+    let raycaster = new THREE.Raycaster(doorPos, doorDir);
+    let intersects = raycaster.intersectObjects(world.collidablePlayer);
+    // Check collision
+    if (intersects.length>0) {
+      if (intersects[0].distance < PLAYERCOLLISIONDISTANCE) {
+          collide =  true;
+          console.log("COLLISION!!!");
       }
-
-    }, false); 
+    }
+    
   }
 
   createOrbitControls(){
@@ -556,7 +514,7 @@ class World {
 
     // Player position
     let playerPos = player.returnObject().position.clone();
-    playerPos.y += 60;
+    playerPos.y += 70;
 
     // Player direction
     let playerDirection = new THREE.Vector3();
@@ -636,123 +594,6 @@ class World {
 
   }
 
-  collisionDetectionOLD(){
-    const world = this;
-    const player = world.player;
-
-    // Player position
-    let playerPos = player.returnObject().position.clone();
-    playerPos.y += 60;
-
-    // Player direction
-    let playerDirection = new THREE.Vector3();
-    player.returnObject().getWorldDirection(playerDirection);
-
-    // If player is moving forwards 
-    if(player.moveDirection.FORWARD) playerDirection.negate();
-
-    // Create a new Raycaster;
-    let raycaster = new THREE.Raycaster(playerPos, playerDirection);
-
-    // blocked variable
-    let blocked = false;
-
-    let intersects = raycaster.intersectObjects(world.collidableObjects);
-    if (intersects.length>0) {
-      if (intersects[0].distance < PLAYERCOLLISIONDISTANCE) {
-          blocked =  true;
-      }
-    }
-
-    // if blocked is false allow player to move forward
-
-
-
-    // cast left
-    playerDirection.set(-1,0,0);
-    playerDirection.applyMatrix4(player.returnObject().matrix);
-    playerDirection.normalize();
-    let leftRaycaster = new THREE.Raycaster(playerPos, playerDirection);
-    let leftIntersects = leftRaycaster.intersectObjects(world.collidableObjects);
-    for (var i = 0; i < leftIntersects.length; i++) {
-      if (leftIntersects[i].distance < PLAYERCOLLISIONDISTANCE) {
-          blocked =  true;
-      }
-    }
-
-    // cast right
-    playerDirection.set(1,0,0);
-    playerDirection.applyMatrix4(player.returnObject().matrix);
-    playerDirection.normalize();
-    let rightRaycaster = new THREE.Raycaster(playerPos, playerDirection);
-    let rightIntersects = rightRaycaster.intersectObjects(world.collidableObjects);
-    for (var i = 0; i < rightIntersects.length; i++) {
-      if (rightIntersects[i].distance < PLAYERCOLLISIONDISTANCE) {
-          blocked =  true;
-      }
-    }
-    
-    return blocked;
-  }
-
-  detectCollision(){
-
-    const world = this;
-    const player = world.player;
-    const playerObject = player.returnObject();
-
-    //The rotation matrix to apply to our direction vector
-    // Undefined by default to indicate ray should coming from front
-    var rotationMatrix;
-    // Get direction of player
-    // let playerDirection = playerObject.getWorldDirection(new THREE.Vector3(0, 0, 0)).clone();
-    let playerDirection = new THREE.Vector3();
-    playerObject.getWorldDirection(playerDirection);
-  
-    // Check which direction we're moving
-    // Flip matrix to that direction so that we can reposition the ray
-    if (player.moveDirection.BACKWARD) {
-        console.log("BACK");
-        rotationMatrix = new THREE.Matrix4();
-        rotationMatrix.makeRotationY(world.degreesToRadians(180));
-    }
-    else if (player.moveDirection.LEFT) {
-        rotationMatrix = new THREE.Matrix4();
-        rotationMatrix.makeRotationY(world.degreesToRadians(90));
-    }
-    else if (player.moveDirection.RIGHT) {
-        rotationMatrix = new THREE.Matrix4();
-        rotationMatrix.makeRotationY(world.degreesToRadians(270));
-    }
-  
-    // Player is moving forward, no rotation matrix needed
-    if (rotationMatrix !== undefined) {
-      console.log("FRONT");
-      playerDirection.applyMatrix4(rotationMatrix);
-    }
-  // Apply ray to player camera
-  let rayCaster = new THREE.Raycaster(playerObject.position, playerDirection);
-
-  // If our ray hit a collidable object, return true
-  if (world.rayIntersect(rayCaster, PLAYERCOLLISIONDISTANCE)) {
-      return true;
-  } else {
-      return false;
-  }
-  }
-
-  rayIntersect(ray, distance) {
-    const world = this;
-    let intersects = ray.intersectObjects(world.collidableObjects);
-
-    for (var i = 0; i < intersects.length; i++) {
-        if (intersects[i].distance < distance) {
-            return true;
-        }
-    }
-    return false;
-  }
-
   initialiseTimer(){
 
     const world = this;
@@ -785,4 +626,19 @@ function convertSeconds(seconds) {
   let sec = seconds % 60;
   return min + "m" + ' ' + sec + "s";
 
+}
+
+/*
+    This function helps to dump a scene graph of an object onto the console.
+*/
+function dumpObject(obj, lines = [], isLast = true, prefix = '') {
+  const localPrefix = isLast ? '└─' : '├─';
+  lines.push(`${prefix}${prefix ? localPrefix : ''}${obj.name || '*no-name*'} [${obj.type}]`);
+  const newPrefix = prefix + (isLast ? '  ' : '│ ');
+  const lastNdx = obj.children.length - 1;
+  obj.children.forEach((child, ndx) => {
+  const isLast = ndx === lastNdx;
+  dumpObject(child, lines, isLast, newPrefix);
+  });
+  return lines;
 }
