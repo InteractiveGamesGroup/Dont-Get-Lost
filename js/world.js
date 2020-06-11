@@ -66,6 +66,14 @@ class World {
       this.counter = 0;
       this.timeLeft = 300;
 
+      // ------------------- Switch cameras ----------------------
+      this.cameraModes = {
+        Near: false,
+        Back: true,
+        Wide: false
+      };
+
+
   }
 
   init(){
@@ -85,7 +93,7 @@ class World {
       this.scene.fog = new THREE.Fog( 0xcce0ff);
       // ------------------- Set Camera settings ----------------------
       this.camera = new Camera();
-
+      
       // ------------------- Set Global scene Light settings ----------------------
       // Add sunlight to the scene 
       let sunLight = new THREE.DirectionalLight(0xffffff,0.5);
@@ -121,10 +129,13 @@ class World {
       world.scene.add(this.player.returnObject());
       this.player.listenForMovement();
       // Dump player object
-      console.log(dumpObject(world.player.root).join('\n'));
+      // console.log(dumpObject(world.player.root).join('\n'));
 
       // Play idle clip when game begins
       this.player.clipActions.Idle.play();
+
+      // Switch cameras functionality
+      this.switchCamera();
 
       // ------------------- Setup End Game functionality ----------------------
       // Add player to collidable playerwa
@@ -179,7 +190,7 @@ class World {
       //Controls look at the player
       const playerClone = player.returnObject().clone();
       let playerPos = playerClone.position;
-      playerPos.y += 80;      
+      playerPos.y += 80; 
       world.controls.target.set( playerPos.x, playerPos.y, playerPos.z );
       // world.controls.target.set( 0, 320, 0);
       // world.controls.target.set( -850, 100, -900 );
@@ -373,7 +384,7 @@ class World {
     world.door.object.add(root);
 
     // Dump Door scene onto console
-    console.log(dumpObject(root).join('\n'));
+    // console.log(dumpObject(root).join('\n'));
     
 
     // ------------------- Animation ----------------------
@@ -616,6 +627,45 @@ class World {
       }
 
     },1000);
+  }
+
+  createCameras(){
+
+  }
+
+  switchCamera(){
+
+    const world = this;
+    const camera = world.camera.returnObject();
+    const player = world.player;
+
+    const playerClone = player.returnObject().clone();
+    console.log(playerClone);
+    let playerPos = playerClone.position;
+    console.log(playerPos);
+
+    document.addEventListener('keydown',(event)=>{
+      if(event.keyCode == 81) {
+
+        // Check current camera
+        if(world.cameraModes.Back){
+          // Switch to wide
+          world.cameraModes.Wide = true;
+          world.cameraModes.Back = false;
+          world.controls.minDistance = 140;
+          world.controls.maxDistance = 150;
+          world.controls.update();
+        }
+        else if(world.cameraModes.Wide){
+          // Switch camera to back
+          world.cameraModes.Wide = false;
+          world.cameraModes.Back = true;
+          world.controls.minDistance = 50;
+          world.controls.maxDistance = 80;
+          world.controls.update();
+        }
+      }
+    });
   }
 
 }
