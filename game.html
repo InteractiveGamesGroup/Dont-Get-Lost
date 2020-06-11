@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dont Get Lost - Game</title>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" type="text/css" href="css/stylesheet.css">
+
+    <!-- JS Scripts -->
+    <script src = 'js/libs/three.js'></script>
+
+    <script src = 'js/controls/PointerLockControls.js'></script>
+    <script src = 'js/controls/OrbitControls.js'></script>
+
+    <script src = "js/loaders/GLTFLoader.js"></script>
+
+    <script src="js/player.js"></script>
+    <script src="js/preloader.js"></script>
+    <script src="js/camera.js"></script>
+    <script src = "js/worldLoader.js"></script>
+    <script src = "js/world.js"></script> 
+
+</head>
+<body>
+    
+    <canvas id="glcanvas"></canvas>
+    <div id="loading">
+        <div>
+            <div>...loading...</div>
+            <div class="progress"><div id="progressbar"></div></div>
+        </div>
+    </div>
+    
+    <div id="timer">Timer:</div>
+
+    <div id="blocker">
+        <div id="pause-menu">
+            <p> 
+                GAME IS PAUSED
+                <br/>
+                PRESS ESCAPE TO RESUME
+            </p>
+        </div>
+    </div>
+    <div id="game-over">
+        <div id="instructions">
+            <p>
+                GAME OVER </br></br> Press ENTER to restart
+            </p>
+        </div>
+    </div>
+    
+</body>
+</html>
