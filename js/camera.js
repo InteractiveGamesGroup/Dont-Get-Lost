@@ -1,4 +1,5 @@
 class Camera{
+  
     constructor(){
       const fov = 60;
       const aspect = window.innerWidth / window.innerHeight;  // the canvas default
@@ -7,10 +8,7 @@ class Camera{
       this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
       this.camera.position.x = 0;
       this.camera.position.y = 0; // Height the camera will be looking from
-      this.camera.position.z = 0; 
-  
-      // this.controls = new THREE.PointerLockControls(this.camera);
-  
+      this.camera.position.z = 0;   
     }
   
     returnObject(){
@@ -20,6 +18,5 @@ class Camera{
     addComponent(component){
       this.camera.add(component);
     }
-  
-  
+
 }

@@ -1,12 +1,10 @@
 
-// VARIABLES USED TO MOVE PLAYER
 // Velocity vector for the player
 let playerVelocity = new THREE.Vector3();
-let playerRotation = 0;
 // How fast the player will move
 let PLAYERSPEED = 900.0;
-
-const PLAYERCOLLISIONDISTANCE = 35; //distance of collision of the player from object
+// Distance of collision of the player from object
+const PLAYERCOLLISIONDISTANCE = 35; 
 
 
 class World {
@@ -65,6 +63,8 @@ class World {
       // ------------------- Game Counter ----------------------
       this.counter = 0;
       this.timeLeft = 300;
+      this.timeinterval;
+      this.time;
 
       // ------------------- Switch cameras ----------------------
       this.cameraModes = {
@@ -492,11 +492,14 @@ class World {
          world.startAnimation();
          world.controls.enabled = true;
          blocker.style.display = "none";
+        //  resume timer
+        world.initialiseTimer();
 
         }else{
           world.stopAnimation();
           world.controls.enabled = false;
           blocker.style.display = "";
+          world.pauseTimer();
         }
       }
 
@@ -611,26 +614,31 @@ class World {
     const timer = document.getElementById("timer");
     const gameOver = document.getElementById("game-over");
 
-    const timeinterval = setInterval(()=>{
+    world.timeinterval = setInterval( ()=>{
 
       world.counter++;
-      let time = convertSeconds(world.timeLeft - world.counter);
+      world.time = convertSeconds(world.timeLeft - world.counter);
 
-      if(time === 0 + "m" + ' ' + 0 + "s"){
-        clearInterval(timeinterval);
+      if(world.time === 0 + "m" + ' ' + 0 + "s"){
+        clearInterval(world.timeinterval);
         timer.innerHTML = "Timer: " + "0m 0s";
         this.stopAnimation();
         gameOver.style.display = "";
         this.restartGame();
       }else{
-        timer.innerHTML = "Timer: "+time;
+        timer.innerHTML = "Timer: "+world.time;
       }
 
     },1000);
   }
 
-  createCameras(){
-
+  pauseTimer(){
+    const world = this;
+    const timer = document.getElementById("timer");
+    // Stop Time
+    clearInterval(world.timeinterval);
+    // Show time left
+    timer.innerHTML = "Timer: "+world.time;
   }
 
   switchCamera(){
@@ -670,6 +678,7 @@ class World {
 
 }
 
+// Convert
 function convertSeconds(seconds) {
 
   let min = Math.floor(seconds / 60);
@@ -678,9 +687,8 @@ function convertSeconds(seconds) {
 
 }
 
-/*
-    This function helps to dump a scene graph of an object onto the console.
-*/
+
+// This function helps to dump a scene graph of an object onto the console.
 function dumpObject(obj, lines = [], isLast = true, prefix = '') {
   const localPrefix = isLast ? '└─' : '├─';
   lines.push(`${prefix}${prefix ? localPrefix : ''}${obj.name || '*no-name*'} [${obj.type}]`);
