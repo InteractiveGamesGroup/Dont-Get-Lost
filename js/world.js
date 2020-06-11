@@ -163,6 +163,8 @@ class World {
       let playerPos = playerClone.position;
       playerPos.y += 70;      
       world.controls.target.set( playerPos.x, playerPos.y, playerPos.z );
+    
+      //world.controls.target.set( -600, 320, -700 );
       world.controls.update();
 
 
@@ -351,8 +353,14 @@ class World {
           this.collidableObjects.push(perimWallFB);
 
           // Create front/back wall
-          perimWallFB.position.set(0, this.UNITHEIGHT / 2, halfMap * sign);
-          this.scene.add(perimWallFB);
+          if (i == 1 ) {
+            perimWallFB.position.set(this.UNITWIDTH, this.UNITHEIGHT / 2, halfMap * sign);
+            this.scene.add(perimWallFB);
+          }
+          else {
+            perimWallFB.position.set(0, this.UNITHEIGHT / 2, halfMap * sign);
+            this.scene.add(perimWallFB);
+          }
   
           sign = -1; // Swap to negative value
       }
