@@ -621,6 +621,12 @@ class World {
 
     if(distanceLeft<100){
       door.clipActions["HingesWings.Movable.ArmatureAction"].play();
+     if(distanceLeft<30){
+        world.stopAnimation();
+        world.controls.enabled = false;
+        world.pauseTimer();
+      }
+      
     }
 
   }
