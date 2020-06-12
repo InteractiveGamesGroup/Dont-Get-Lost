@@ -578,8 +578,12 @@ class World {
       playerVelocity.z += PLAYERSPEED * delta;
       player.clipActions.Walk.play();
     } 
-
-    if (!world.paused && !blocked && player.run == true) {
+    //Player run
+    if (!world.paused && !blocked && player.run == true && player.moveDirection.FORWARD) {
+      playerVelocity.z -= PLAYERSPEED * delta;
+      player.clipActions.Run.play();
+    }
+    if (!world.paused && !blocked && player.run == true && player.moveDirection.BACKWARD) {
       playerVelocity.z += PLAYERSPEED * delta;
       player.clipActions.Run.play();
     }
