@@ -98,10 +98,31 @@
 	top: 0;
 	left: 0;
 	height: 30px;
-	width: 100%;
+	width: 200px;
 	background: #000000
 
   }
+  /*Mute Unmute*/
+.unmute{
+	position: absolute;
+	top: 0;
+	right: 0;
+	background: black;
+	width: 200px;
+	height: 30px;
+	cursor: pointer;
+}
+.mute{
+	position: absolute;
+	top: 0;
+	right: 0;
+	background: black;
+	
+}
+
+
+	
+  
 
 /* 
 	Pause menu

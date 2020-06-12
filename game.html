@@ -8,6 +8,7 @@
     <!-- Stylesheets -->
     <link rel="stylesheet" type="text/css" href="css/stylesheet.css">
 
+
     <!-- JS Scripts -->
     <script src = 'js/libs/three.js'></script>
 
@@ -34,6 +35,18 @@
     </div>
     
     <div id="timer">Timer:</div>
+    
+    <audio id="track" autoplay="autoplay" loop="loop">
+        <source src="assets/Sound/02 Showstopper.mp3" type="audio/mpeg" />
+        Your browser does not support audio element.
+    </audio>
+    
+    <div class="unmute" onclick="document.getElementById('track').muted = !document.getElementById('track').muted;
+        ">  MUTE/UNMUTE
+    </div>
+    
+    
+    </div>
 
     <div id="blocker">
         <div id="pause-menu">

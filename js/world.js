@@ -392,6 +392,8 @@ class World {
     world.door.animations = {};
     world.door.clipActions = {};
 
+   
+
     // ------------------- Prepare clip animations ----------------------
     model.gltf.animations.forEach( (clip)=>{
       world.door.animations[clip.name] = clip;
@@ -521,6 +523,9 @@ class World {
 
     const world = this;
     const player = world.player;
+    //const door = world.door;
+
+    
 
     // Player velocity
     playerVelocity.x -= playerVelocity.x * 10.0 * delta;
@@ -529,6 +534,18 @@ class World {
     // Player position
     let playerPos = player.returnObject().position.clone();
     playerPos.y += 70;
+
+    // //Door Position
+    // let doorPos = world.door.object.position.clone();
+    // doorPos.y += 60;
+
+
+
+    // if(doorPos.distanceTo(playerPos)<PLAYERCOLLISIONDISTANCE/2){
+    //   world.door.clipActions.HingesWings.Movable.ArmatureAction.play();
+    // }
+    
+
 
     // Player direction
     let playerDirection = new THREE.Vector3();
