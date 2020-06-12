@@ -578,8 +578,13 @@ class World {
       playerVelocity.z += PLAYERSPEED * delta;
       player.clipActions.Walk.play();
     } 
-    
 
+    if (!world.paused && !blocked && player.run == true) {
+      playerVelocity.z += PLAYERSPEED * delta;
+      player.clipActions.Run.play();
+    }
+  
+  
     // cast left
     playerDirection.set(-1,0,0);
     playerDirection.applyMatrix4(player.returnObject().matrix);
@@ -618,6 +623,7 @@ class World {
       playerVelocity.x = 0;
       playerVelocity.z = 0;
       player.clipActions.Walk.stop();
+      player.clipActions.Run.stop();
       player.clipActions.Idle.play();
     }
 
