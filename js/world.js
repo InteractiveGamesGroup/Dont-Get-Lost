@@ -73,7 +73,6 @@ class World {
         Wide: false
       };
 
-
   }
 
   init(){
@@ -89,8 +88,9 @@ class World {
       //background of the scene  
       this.scene.background = new THREE.Color( '#87ceeb' );
       // Add some fog for effects
+      this.scene.fog = new THREE.FogExp2(0xcccccc, 0.002);
       // this.scene.fog = new THREE.FogExp2(0xcccccc, 0.0030);
-      this.scene.fog = new THREE.Fog( 0xcce0ff);
+      // this.scene.fog = new THREE.Fog( 0xcce0ff);
       // ------------------- Set Camera settings ----------------------
       this.camera = new Camera();
       
@@ -98,20 +98,24 @@ class World {
       // Add sunlight to the scene 
       let sunLight = new THREE.DirectionalLight(0xffffff,0.5);
       sunLight.castShadow = true;
-      sunLight.position.set(900, 600, 800);
+      sunLight.position.set(900, 750, 800);
       sunLight.target.position.set(0,30, 70);
-      sunLight.shadow.mapSize.width = 1024;
-      sunLight.shadow.mapSize.height = 1024;
       sunLight.shadow.camera.near = 50;
       sunLight.shadow.camera.far = 2000;
-      sunLight.shadow.camera.right = 700;
-      sunLight.shadow.camera.left = -700;
-      sunLight.shadow.camera.bottom = -300;
+      sunLight.shadow.camera.right = 1050;
+      sunLight.shadow.camera.left = -1050;
+      sunLight.shadow.camera.bottom = -350;
       sunLight.shadow.camera.top = 300;
       this.scene.add(sunLight);
       this.scene.add(sunLight.target);
       sunLight.target.updateMatrixWorld();
       sunLight.shadow.camera.updateProjectionMatrix();
+      // Light Helper
+      // let helper = new THREE.DirectionalLightHelper( sunLight, 5 );
+      // this.scene.add( helper );
+      // //Create a helper for the shadow camera (optional)
+      // let shadowHelper = new THREE.CameraHelper( sunLight.shadow.camera );
+      // this.scene.add( shadowHelper );
       // Second Ambience light
       let ambienceLight = new THREE.AmbientLight( 0x404040 ); // soft white light
       this.scene.add( ambienceLight  );
@@ -125,9 +129,9 @@ class World {
 
       // ------------------- Create Player ----------------------
       this.player = new Player("Soldier",world.models.soldier);
-      // this.player.addComponent(world.camera.returnObject());
       world.scene.add(this.player.returnObject());
       this.player.listenForMovement();
+
       // Dump player object
       // console.log(dumpObject(world.player.root).join('\n'));
 
@@ -158,9 +162,6 @@ class World {
     this.renderer.setSize(window.innerWidth,window.innerHeight);
 
     // Make Controls
-    // world.installPointerLock();
-    // world.createPointerLockControls();
-    // world.installPointerLockControls();
     world.createOrbitControls();
 
     // Add game pausing listener
@@ -192,7 +193,7 @@ class World {
       let playerPos = playerClone.position;
       playerPos.y += 80; 
       world.controls.target.set( playerPos.x, playerPos.y, playerPos.z );
-      // world.controls.target.set( 0, 320, 0);
+      // world.controls.target.set( 900, 600, 800);
       // world.controls.target.set( -850, 100, -900 );
       world.controls.update();
 
@@ -203,10 +204,11 @@ class World {
       world.door.mixer.update(delta);
 
       // Detect collision
-      this.movePlayer(delta);
+      world.movePlayer(delta);
 
-      
-       
+      // Endgame
+      world.endGame();
+
       this.renderer.render( world.scene, world.camera.returnObject() );
 
   }
@@ -264,7 +266,8 @@ class World {
       let interior_wall = this.textures.inner_wall.text;
 
       //Immediately use the texture for material creation
-      let cubeMat = new THREE.MeshBasicMaterial( { map: interior_wall } );
+      // let cubeMat = new THREE.MeshBasicMaterial( { map: interior_wall } );
+      let cubeMat = new THREE.MeshPhongMaterial( { map: interior_wall } );
   
       // Keep cubes within boundry walls
       let widthOffset = this.UNITWIDTH / 2;
@@ -385,8 +388,6 @@ class World {
 
     // Dump Door scene onto console
     // console.log(dumpObject(root).join('\n'));
-    
-
     // ------------------- Animation ----------------------
     world.door.mixer = new THREE.AnimationMixer(root);
     world.door.animations = {};
@@ -398,8 +399,9 @@ class World {
     });
     Object.values(world.door.animations).forEach( (clip)=>{
       world.door.clipActions[clip.name] = world.door.mixer.clipAction(clip);
+      // Only play once
+      world.door.clipActions[clip.name].loop = THREE.LoopOnce;
     })
-
 
     // ------------------- Set Texures ----------------------
     // Textures
@@ -608,6 +610,21 @@ class World {
 
   }
 
+  endGame(){
+    const player = world.player;
+    const door = world.door;
+
+    let playerPos = player.returnObject().position.clone();
+    let doorPos = door.object.position.clone();
+
+    let distanceLeft = doorPos.distanceTo(playerPos);
+
+    if(distanceLeft<100){
+      door.clipActions["HingesWings.Movable.ArmatureAction"].play();
+    }
+
+  }
+
   initialiseTimer(){
 
     const world = this;
@@ -648,9 +665,7 @@ class World {
     const player = world.player;
 
     const playerClone = player.returnObject().clone();
-    console.log(playerClone);
     let playerPos = playerClone.position;
-    console.log(playerPos);
 
     document.addEventListener('keydown',(event)=>{
       if(event.keyCode == 81) {
