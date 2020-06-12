@@ -6,20 +6,29 @@ class Player{
         this.gameObject.position.x = 0;
         this.gameObject.position.y = 0;
         this.gameObject.position.z = -70;
-        this.gameObject.castShadow = true;
 
         // ------------------- Set Character ----------------------
         // Root object
         this.root = model.gltf.scene;
         this.root.scale.set( 60, 60, 60 );
-        this.root.castShadow = true;
         this.addComponent(this.root);
+        // Shadows
+        this.root.traverse( function ( object ) {
+
+            if ( object.isMesh ) object.castShadow = true;
+
+        } );
+
+
         // // Animation
         this.mixer = new THREE.AnimationMixer(this.root);
         this.animations = {};
         this.clipActions = {};
         this.prepareAnimations(model);
         this.prepareClipActions();
+
+
+
 
         this.PLAYERSPEED = 600.0;
         // Move Directions
