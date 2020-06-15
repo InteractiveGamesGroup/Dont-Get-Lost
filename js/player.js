@@ -83,6 +83,7 @@ class Player{
                     break;
                 case 16: // Shift
                     player.run = true;
+                    break;
                 case 32: // space
                     // player.jump();
                     break;
@@ -110,7 +111,7 @@ class Player{
                     player.moveDirection.RIGHT = false;
                     break;
                 case 16: // Shift
-                    player.run = true;
+                    player.run = false;
                     break;
                 case 32: // space
                     break;
